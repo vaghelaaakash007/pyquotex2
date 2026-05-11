@@ -27,7 +27,12 @@ class WaitableSlot(Generic[T]):
         self._event = asyncio.Event()
 
     def set(self, value: T) -> None:
-        """Store the value and wake any awaiting consumers."""
+        """Store the value and wake any awaiting consumers.
+
+        Raises ValueError if value is None — use clear() to reset the slot.
+        """
+        if value is None:
+            raise ValueError("WaitableSlot.set() does not accept None; use clear() to reset")
         self._value = value
         self._event.set()
 
@@ -37,14 +42,20 @@ class WaitableSlot(Generic[T]):
         self._event.clear()
 
     def is_set(self) -> bool:
+        """Return True if the slot currently holds a value."""
         return self._event.is_set()
 
+    # NOTE: raises asyncio.TimeoutError on timeout. Phase 2 consumers wrap
+    # this in pyquotex.exceptions.QuotexTimeoutError at their call sites so
+    # the asyncio coupling stays internal to this module.
     async def wait(self, timeout: float = DEFAULT_TIMEOUT) -> T:
         """Block until set or raise asyncio.TimeoutError on timeout."""
         await asyncio.wait_for(self._event.wait(), timeout=timeout)
         return self._value  # type: ignore[return-value]
 
 
+# NOTE: raises asyncio.TimeoutError on timeout. Consumers should wrap it
+# in pyquotex.exceptions.QuotexTimeoutError at their call sites.
 async def wait_until(
     predicate: Callable[[], bool],
     *,

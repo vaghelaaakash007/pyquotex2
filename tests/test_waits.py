@@ -2,7 +2,7 @@
 import asyncio
 import pytest
 
-from pyquotex._api._waits import WaitableSlot, wait_until
+from pyquotex._api._waits import SlotRegistry, WaitableSlot, wait_until
 
 
 @pytest.mark.asyncio
@@ -62,9 +62,6 @@ async def test_wait_until_times_out():
         await wait_until(lambda: False, timeout=0.05)
 
 
-from pyquotex._api._waits import SlotRegistry
-
-
 def test_slot_registry_has_named_slots():
     reg = SlotRegistry()
     assert reg.balance is not None
@@ -92,4 +89,48 @@ def test_slot_registry_keyed_slot_release():
     slot.set({"id": 1})
     reg.release_order_confirm("req-1")
     new_slot = reg.order_confirm("req-1")
+    assert new_slot is not slot
+
+
+@pytest.mark.asyncio
+async def test_slot_rejects_none():
+    """set(None) is invalid — use clear() to reset."""
+    slot: WaitableSlot[dict] = WaitableSlot()
+    with pytest.raises(ValueError):
+        slot.set(None)
+    assert not slot.is_set()
+
+
+@pytest.mark.asyncio
+async def test_slot_double_set_uses_latest_value():
+    """Second set replaces the first; wait returns the latest value."""
+    slot: WaitableSlot[int] = WaitableSlot()
+    slot.set(1)
+    slot.set(2)
+    assert await slot.wait(timeout=0.1) == 2
+
+
+@pytest.mark.asyncio
+async def test_slot_two_consumers_both_resolve():
+    """Multiple awaiters on the same slot all receive the value."""
+    slot: WaitableSlot[str] = WaitableSlot()
+
+    async def consumer() -> str:
+        return await slot.wait(timeout=1.0)
+
+    t1 = asyncio.create_task(consumer())
+    t2 = asyncio.create_task(consumer())
+    await asyncio.sleep(0.01)  # ensure both are blocked on _event
+    slot.set("hello")
+    assert await t1 == "hello"
+    assert await t2 == "hello"
+
+
+def test_slot_registry_win_result_release():
+    """release_win_result must drop the slot so a fresh one is created next."""
+    reg = SlotRegistry()
+    slot = reg.win_result("op-1")
+    slot.set({"result": "win"})
+    reg.release_win_result("op-1")
+    new_slot = reg.win_result("op-1")
     assert new_slot is not slot

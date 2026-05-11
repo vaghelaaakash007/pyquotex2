@@ -6,6 +6,7 @@ from typing import Any
 
 from bs4.element import AttributeValueList
 
+from pyquotex._api._waits import backoff_sleep
 from pyquotex.config import update_session
 from pyquotex.network.navigator import Browser
 from pyquotex.utils import json_utils as json
@@ -95,7 +96,11 @@ class Login(Browser):
             print("\nClosing program.")
             sys.exit()
 
-        await asyncio.sleep(1)
+        # TODO: this is a linear settle-delay between OTP entry and POST,
+        # not a counted retry. backoff_sleep(0) preserves ~1s pacing today;
+        # a proper retry counter should be introduced when this method is
+        # refactored to handle transient PIN-submission failures.
+        await backoff_sleep(0)
         await self.send_request(
             method="POST",
             url=f"{self.full_url}/sign-in/modal",
@@ -167,7 +172,11 @@ class Login(Browser):
                      "de enviar para o seu e-mail: "
             )
             await self.awaiting_pin(data, input_message)
-        await asyncio.sleep(1)
+        # TODO: linear settle-delay before reading the post-login redirect,
+        # not a counted retry. backoff_sleep(0) preserves ~1s pacing today;
+        # a proper retry counter should be introduced if login form
+        # submission grows transient-failure handling.
+        await backoff_sleep(0)
         success = await self.success_login()
         return success
 

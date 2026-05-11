@@ -119,6 +119,8 @@ class QuotexAPI:
         self.browser.set_headers()
         self.settings = Settings(self)
         self.event_registry = EventRegistry()
+        from pyquotex._api._waits import SlotRegistry
+        self.slots = SlotRegistry()
         self.profit_today: float | None = None
         self.heartbeat_task: asyncio.Task | None = None
 
@@ -135,7 +137,12 @@ class QuotexAPI:
                     await self.websocket.send('42["tick"]')
                 except Exception:
                     break
-                # Send it every 5 seconds as in legacy version
+                # Send it every 5 seconds as in legacy version.
+                # TODO(refactor/architecture Phase 2): this is fixed-interval
+                # pacing for a heartbeat ping (NOT a retry-on-error sleep),
+                # so exponential backoff_sleep would be the wrong primitive
+                # here. Migrating only makes sense if reconnect logic is
+                # added that retries on transient send failures.
                 await asyncio.sleep(5)
 
         self.heartbeat_task = asyncio.create_task(heartbeat())
@@ -248,6 +255,8 @@ class QuotexAPI:
                         )
                     elif event == "balance":
                         self.account_balance = data
+                        if data is not None:
+                            self.slots.balance.set(data)
                         await self.event_registry.set_event(
                             'balance_ready', data
                         )
@@ -293,6 +302,8 @@ class QuotexAPI:
                     if isinstance(data, dict) and data.get("asset"):
                         asset = data["asset"]
                         self.candle_v2_data[asset] = data
+                        if data is not None:
+                            self.slots.candle_v2(asset).set(data)
                         await self.event_registry.set_event(
                             f'candles_ready_{asset}', data
                         )
@@ -356,6 +367,13 @@ class QuotexAPI:
                             self.listinfodata.set(
                                 win, game_state, str(order_id), profit
                             )
+                            # Fire keyed win_result slot when the order is
+                            # closed (game_state == 1) so check_win() can
+                            # resolve event-driven instead of polling.
+                            if game_state == 1:
+                                self.slots.win_result(str(order_id)).set(
+                                    {"win": win, "profit": profit}
+                                )
 
                     # Always set buy_confirmed if it was an open request
                     if (
@@ -365,12 +383,16 @@ class QuotexAPI:
                         if 'pending' in self._temp_status:
                             self.pending_id = data.get("id")
                             self.pending_successful = True
+                            if self.pending_id is not None:
+                                self.slots.pending_confirm.set({"id": self.pending_id})
                             await self.event_registry.set_event(
                                 'pending_confirmed', data
                             )
                         else:
                             self.buy_id = data.get("id")
                             self.buy_successful = True
+                            if self.buy_id is not None:
+                                self.slots.buy_confirm.set({"id": self.buy_id})
                             await self.event_registry.set_event(
                                 'buy_confirmed', data
                             )
@@ -381,6 +403,8 @@ class QuotexAPI:
             if isinstance(message, dict):
                 if message.get("liveBalance") or message.get("demoBalance"):
                     self.account_balance = message
+                    if message is not None:
+                        self.slots.balance.set(message)
                     await self.event_registry.set_event(
                         'balance_ready', message
                     )
@@ -400,6 +424,10 @@ class QuotexAPI:
                             self.listinfodata.set(
                                 win, 1, str(order_id), profit
                             )
+                            # Always closed here; fire keyed win_result slot.
+                            self.slots.win_result(str(order_id)).set(
+                                {"win": win, "profit": profit}
+                            )
                     await self.event_registry.set_event(
                         'history_ready', message
                     )
@@ -409,6 +437,8 @@ class QuotexAPI:
                 ):
                     # Potential order confirmation
                     self.buy_id = message.get("id")
+                    if self.buy_id is not None:
+                        self.slots.buy_confirm.set({"id": self.buy_id})
                     await self.event_registry.set_event(
                         'buy_confirmed', message
                     )
@@ -422,6 +452,8 @@ class QuotexAPI:
                 data = message[1]
                 order_id = data.get("id")
                 self.buy_id = order_id
+                if self.buy_id is not None:
+                    self.slots.buy_confirm.set({"id": self.buy_id})
 
                 # Update listinfodata for check_win
                 if "profit" in data and "status" in data:
@@ -431,6 +463,11 @@ class QuotexAPI:
                     self.listinfodata.set(
                         win, game_state, str(order_id), profit
                     )
+                    # Fire keyed win_result slot when closed.
+                    if game_state == 1 and order_id is not None:
+                        self.slots.win_result(str(order_id)).set(
+                            {"win": win, "profit": profit}
+                        )
 
                 await self.event_registry.set_event('buy_confirmed', data)
                 await self.event_registry.set_event(

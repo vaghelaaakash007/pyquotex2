@@ -1,5 +1,4 @@
 import asyncio
-import itertools
 import logging
 import time
 from datetime import datetime
@@ -8,6 +7,7 @@ from typing import Any, Callable
 from pyquotex.utils import json_utils as json
 from pyquotex.exceptions import QuotexTimeoutError
 from . import expiration
+from ._api._constants import DEFAULT_TIMEOUT, _request_counter
 from .api import QuotexAPI
 from .config import (
     load_session,
@@ -37,15 +37,6 @@ logger = logging.getLogger(__name__)
 # not one-shot waits). The deferred TODOs on individual methods document
 # the specific WS-producer gaps where event-driven migration IS desired
 # but blocked by a missing producer.
-
-# Default timeout (seconds) for async polling loops
-DEFAULT_TIMEOUT = 30
-
-# Monotonically increasing counter for WebSocket request indices.
-# Seeded from the current millisecond timestamp, so indices remain
-# browser-style large integers while being globally unique across
-# all workers and loop iterations within a process (fixes #85).
-_request_counter = itertools.count(int(time.time() * 1000))
 
 
 class Quotex(OptimizedQuotexMixin):

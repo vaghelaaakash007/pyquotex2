@@ -94,6 +94,7 @@ class SlotRegistry:
         # Keyed slots (created on demand)
         self._order_confirm: dict[str, WaitableSlot[dict]] = {}
         self._win_result: dict[str, WaitableSlot[dict]] = {}
+        self._candle_v2: dict[str, WaitableSlot[dict]] = {}
 
     def order_confirm(self, request_id: str) -> WaitableSlot[dict]:
         slot = self._order_confirm.get(request_id)
@@ -114,3 +115,15 @@ class SlotRegistry:
 
     def release_win_result(self, operation_id: str) -> None:
         self._win_result.pop(operation_id, None)
+
+    def candle_v2(self, asset: str) -> WaitableSlot[dict]:
+        """Get or create a per-asset slot fired by the candle_v2_data handler."""
+        slot = self._candle_v2.get(asset)
+        if slot is None:
+            slot = WaitableSlot()
+            self._candle_v2[asset] = slot
+        return slot
+
+    def release_candle_v2(self, asset: str) -> None:
+        """Release the per-asset candle_v2 slot so a new wait creates a fresh one."""
+        self._candle_v2.pop(asset, None)

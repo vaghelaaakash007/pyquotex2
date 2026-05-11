@@ -506,6 +506,13 @@ class Quotex(OptimizedQuotexMixin):
         await self.api.get_history_line(
             self.codes_asset[asset], index, end_from_time, offset
         )
+        # TODO(refactor/architecture Phase 2.7): polling here cannot be migrated
+        # to SlotRegistry until we identify the WS event that should populate
+        # self.api.historical_candles. No producer exists in
+        # pyquotex/api.py:_on_message, so this method currently only exits via
+        # the timeout branch below. Same situation as edit_practice_balance
+        # and sell_option — investigate WS traffic when calling get_history_line
+        # to find the correct producer event.
         start_time = time.time()
         while await self.check_connect() and self.api.historical_candles is None:
             if time.time() - start_time > timeout:
@@ -524,21 +531,18 @@ class Quotex(OptimizedQuotexMixin):
         if self.api is None:
             return None
 
+        # Reset the slot AND the data dict — both serve as sentinels.
         self.api.candle_v2_data[asset] = None
+        self.api.slots.release_candle_v2(asset)
         await self.start_candles_stream(asset, period)
-        start_time = time.time()
-        # Poll until data arrives or timeout is reached.
-        # Previous code returned None on every iteration because the
-        # return statement was inside the while-body instead of the
-        # timeout branch, so data was never awaited.
-        while self.api.candle_v2_data[asset] is None:
-            if time.time() - start_time > timeout:
-                logger.error(
-                    "Timeout waiting for get_candle_v2 data for %s.",
-                    asset
-                )
-                return None
-            await asyncio.sleep(0.2)
+        try:
+            await self.api.slots.candle_v2(asset).wait(timeout=timeout)
+        except asyncio.TimeoutError:
+            logger.error(
+                "Timeout waiting for get_candle_v2 data for %s.",
+                asset
+            )
+            return None
         candles = self.prepare_candles(asset, period)
         return candles
 

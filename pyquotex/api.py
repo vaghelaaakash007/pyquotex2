@@ -297,6 +297,8 @@ class QuotexAPI:
                     if isinstance(data, dict) and data.get("asset"):
                         asset = data["asset"]
                         self.candle_v2_data[asset] = data
+                        if data is not None:
+                            self.slots.candle_v2(asset).set(data)
                         await self.event_registry.set_event(
                             f'candles_ready_{asset}', data
                         )

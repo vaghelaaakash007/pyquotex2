@@ -157,3 +157,21 @@ def test_quotex_api_has_slot_registry():
     )
     assert isinstance(api.slots, SlotRegistry)
     assert api.slots.balance is not None
+
+
+def test_slot_registry_candle_v2_keyed():
+    reg = SlotRegistry()
+    slot_a = reg.candle_v2("EURUSD")
+    slot_b = reg.candle_v2("EURUSD")
+    slot_c = reg.candle_v2("GBPUSD")
+    assert slot_a is slot_b
+    assert slot_a is not slot_c
+
+
+def test_slot_registry_candle_v2_release():
+    reg = SlotRegistry()
+    slot = reg.candle_v2("EURUSD")
+    slot.set({"foo": "bar"})
+    reg.release_candle_v2("EURUSD")
+    new_slot = reg.candle_v2("EURUSD")
+    assert new_slot is not slot

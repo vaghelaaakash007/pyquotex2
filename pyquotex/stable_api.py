@@ -1112,9 +1112,8 @@ class Quotex(OptimizedQuotexMixin):
             try:
                 event_data = await self.api.slots.buy_confirm.wait(timeout=timeout)
             except asyncio.TimeoutError:
-                raise QuotexTimeoutError(
-                    f"buy timed out after {timeout}s"
-                )
+                logger.error("Timeout waiting for buy confirmation.")
+                return False, "Timeout"
         else:
             event_data = {"id": self.api.buy_id}
 
@@ -1161,9 +1160,8 @@ class Quotex(OptimizedQuotexMixin):
             try:
                 await self.api.slots.pending_confirm.wait(timeout=DEFAULT_TIMEOUT)
             except asyncio.TimeoutError:
-                raise QuotexTimeoutError(
-                    f"open_pending timed out after {DEFAULT_TIMEOUT}s"
-                )
+                logger.error("Timeout pending order.")
+                return False, "Timeout waiting for pending ID"
 
         if self.api.state.check_websocket_if_error:
             return False, self.api.state.websocket_error_reason

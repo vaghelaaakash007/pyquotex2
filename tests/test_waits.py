@@ -175,3 +175,25 @@ def test_slot_registry_candle_v2_release():
     reg.release_candle_v2("EURUSD")
     new_slot = reg.candle_v2("EURUSD")
     assert new_slot is not slot
+
+
+@pytest.mark.asyncio
+async def test_backoff_sleep_respects_base():
+    """attempt=0 with base=0.01 should sleep ~0.01s (within jitter)."""
+    import time
+    from pyquotex._api._waits import backoff_sleep
+    start = time.monotonic()
+    await backoff_sleep(0, base=0.01, cap=0.1, jitter=0)
+    elapsed = time.monotonic() - start
+    assert 0.005 <= elapsed <= 0.05
+
+
+@pytest.mark.asyncio
+async def test_backoff_sleep_caps_at_max():
+    """A large attempt should not exceed cap (within jitter)."""
+    import time
+    from pyquotex._api._waits import backoff_sleep
+    start = time.monotonic()
+    await backoff_sleep(5, base=0.01, cap=0.05, jitter=0)
+    elapsed = time.monotonic() - start
+    assert 0.04 <= elapsed <= 0.15

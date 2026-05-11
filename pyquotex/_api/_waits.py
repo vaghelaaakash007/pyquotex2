@@ -10,6 +10,7 @@ a hard timeout.
 from __future__ import annotations
 
 import asyncio
+import random
 from typing import Callable, Generic, TypeVar
 
 T = TypeVar("T")
@@ -68,6 +69,24 @@ async def wait_until(
             await asyncio.sleep(poll_interval)
 
     await asyncio.wait_for(_loop(), timeout=timeout)
+
+
+async def backoff_sleep(
+    attempt: int,
+    *,
+    base: float = 1.0,
+    cap: float = 30.0,
+    jitter: float = 0.1,
+) -> None:
+    """Sleep for an exponentially increasing duration with jitter.
+
+    Used for retry loops where the previous attempt failed. `attempt` is
+    zero-indexed (0, 1, 2, ...). Delay grows as base * 2**attempt, capped
+    at `cap` seconds, with multiplicative jitter of ±jitter (0.1 = ±10%).
+    """
+    delay = min(cap, base * (2 ** attempt))
+    delay = delay * (1.0 + random.uniform(-jitter, jitter))
+    await asyncio.sleep(max(0.0, delay))
 
 
 class SlotRegistry:

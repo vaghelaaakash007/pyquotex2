@@ -26,3 +26,4 @@ def test_module_invocation_help_runs():
     )
     assert result.returncode == 0, f"stderr: {result.stderr}"
     assert "balance" in result.stdout
+    assert "buy" in result.stdout

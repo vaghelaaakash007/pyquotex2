@@ -362,6 +362,13 @@ class QuotexAPI:
                             self.listinfodata.set(
                                 win, game_state, str(order_id), profit
                             )
+                            # Fire keyed win_result slot when the order is
+                            # closed (game_state == 1) so check_win() can
+                            # resolve event-driven instead of polling.
+                            if game_state == 1:
+                                self.slots.win_result(str(order_id)).set(
+                                    {"win": win, "profit": profit}
+                                )
 
                     # Always set buy_confirmed if it was an open request
                     if (
@@ -412,6 +419,10 @@ class QuotexAPI:
                             self.listinfodata.set(
                                 win, 1, str(order_id), profit
                             )
+                            # Always closed here; fire keyed win_result slot.
+                            self.slots.win_result(str(order_id)).set(
+                                {"win": win, "profit": profit}
+                            )
                     await self.event_registry.set_event(
                         'history_ready', message
                     )
@@ -447,6 +458,11 @@ class QuotexAPI:
                     self.listinfodata.set(
                         win, game_state, str(order_id), profit
                     )
+                    # Fire keyed win_result slot when closed.
+                    if game_state == 1 and order_id is not None:
+                        self.slots.win_result(str(order_id)).set(
+                            {"win": win, "profit": profit}
+                        )
 
                 await self.event_registry.set_event('buy_confirmed', data)
                 await self.event_registry.set_event(

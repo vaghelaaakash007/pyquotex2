@@ -1307,21 +1307,34 @@ class Quotex(OptimizedQuotexMixin):
         if self.api is None:
             return "loss", 0.0
 
-        start_time = time.time()
-        while await self.check_connect():
-            # Safety timeout after 5 minutes
-            if time.time() - start_time > 300:
-                break
+        # Fast path: result may already be cached (e.g. closed deal arrived
+        # before this method was called).
+        cached = self.api.listinfodata.get(order_id)
+        if cached and cached.get("game_state") == 1:
+            self.api.listinfodata.delete(order_id)
+            return (
+                cached.get("win", "loss"),
+                float(cached.get("profit", 0)),
+            )
 
-            data_dict = self.api.listinfodata.get(order_id)
-            if data_dict and data_dict.get("game_state") == 1:
-                self.api.listinfodata.delete(order_id)
-                win = data_dict.get("win", "loss")
-                profit = float(data_dict.get("profit", 0))
-                return win, profit
-            await asyncio.sleep(0.2)
+        # Event-driven path: wait on the keyed win_result slot fired by
+        # _on_message when the matching order closes.
+        key = str(order_id)
+        slot = self.api.slots.win_result(key)
+        try:
+            result = await slot.wait(timeout=300)
+        except asyncio.TimeoutError:
+            return "loss", 0.0
+        finally:
+            self.api.slots.release_win_result(key)
 
-        return "loss", 0.0
+        # Clean up the listinfodata cache to match prior behavior.
+        self.api.listinfodata.delete(order_id)
+        self.api.listinfodata.delete(key)
+
+        win = result.get("win", "loss") if result else "loss"
+        profit = float(result.get("profit", 0)) if result else 0.0
+        return win, profit
 
     async def start_candles_stream(
             self, asset: str = "EURUSD", period: int = 0

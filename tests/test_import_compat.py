@@ -22,3 +22,8 @@ def test_account_type_importable():
 def test_indicators_importable():
     from pyquotex.utils.indicators import TechnicalIndicators
     assert TechnicalIndicators is not None
+
+
+def test_exceptions_importable():
+    from pyquotex.exceptions import QuotexTimeoutError
+    assert issubclass(QuotexTimeoutError, Exception)

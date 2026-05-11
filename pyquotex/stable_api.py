@@ -29,6 +29,15 @@ from .utils.services import truncate
 
 logger = logging.getLogger(__name__)
 
+# Migration note (refactor/architecture Phase 2):
+# Several streaming-loop yields (await asyncio.sleep(0.2)) remain in this
+# file. They are NOT polling-for-completion patterns — they are pacing for
+# continuous data flow inside start_*_stream methods. Migrating them to
+# event-driven waits would change semantics (the streams are infinite loops,
+# not one-shot waits). The deferred TODOs on individual methods document
+# the specific WS-producer gaps where event-driven migration IS desired
+# but blocked by a missing producer.
+
 # Default timeout (seconds) for async polling loops
 DEFAULT_TIMEOUT = 30
 

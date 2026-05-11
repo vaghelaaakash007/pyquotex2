@@ -54,3 +54,20 @@ def test_public_method_params_unchanged():
                 f"{name}: baseline={baseline_params} current={current_params}"
             )
     assert not diffs, "Parameter signatures changed:\n" + "\n".join(diffs)
+
+
+def test_public_method_kinds_unchanged():
+    """A symbol's kind (method/attribute) must not change between baseline and current."""
+    baseline = json.loads(FIXTURE.read_text())
+    current = _current_surface()
+    changed = []
+    for name in baseline:
+        if name not in current:
+            continue  # caught by test_public_methods_present
+        baseline_kind = baseline[name].get("kind")
+        current_kind = current[name].get("kind")
+        if baseline_kind != current_kind:
+            changed.append(
+                f"{name}: baseline={baseline_kind} current={current_kind}"
+            )
+    assert not changed, "Symbol kinds changed:\n" + "\n".join(changed)

@@ -111,9 +111,22 @@ class Quotex(OptimizedQuotexMixin):
 
     @staticmethod
     async def _check_connect(state: Any) -> bool:
-        """Check connection using the per-instance state object."""
-        await asyncio.sleep(2)
-        return state.auth_status == AuthStatus.AUTHENTICATED
+        """Check connection using the per-instance state object.
+
+        Waits up to ~2s for the state to settle on AUTHENTICATED; returns
+        as soon as the predicate is satisfied (event-driven path) or False
+        on timeout. Replaces an unconditional ``await asyncio.sleep(2)``.
+        """
+        from pyquotex._api._waits import wait_until
+        try:
+            await wait_until(
+                lambda: state.auth_status == AuthStatus.AUTHENTICATED,
+                timeout=2,
+                poll_interval=0.05,
+            )
+            return True
+        except asyncio.TimeoutError:
+            return state.auth_status == AuthStatus.AUTHENTICATED
 
     async def check_connect(self) -> bool:
         """Check connection using the current API's state."""
@@ -180,8 +193,18 @@ class Quotex(OptimizedQuotexMixin):
             )
 
             if not self.api.instruments:
-                # Try one last wait if empty
-                await asyncio.sleep(2)
+                # Try one last wait if empty — event-driven up to 2s
+                from pyquotex._api._waits import wait_until
+                try:
+                    await wait_until(
+                        lambda: bool(
+                            self.api and self.api.instruments
+                        ),
+                        timeout=2,
+                        poll_interval=0.1,
+                    )
+                except asyncio.TimeoutError:
+                    pass
 
             return self.api.instruments or []
         except TimeoutError:

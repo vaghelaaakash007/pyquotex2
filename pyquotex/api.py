@@ -137,7 +137,12 @@ class QuotexAPI:
                     await self.websocket.send('42["tick"]')
                 except Exception:
                     break
-                # Send it every 5 seconds as in legacy version
+                # Send it every 5 seconds as in legacy version.
+                # TODO(refactor/architecture Phase 2): this is fixed-interval
+                # pacing for a heartbeat ping (NOT a retry-on-error sleep),
+                # so exponential backoff_sleep would be the wrong primitive
+                # here. Migrating only makes sense if reconnect logic is
+                # added that retries on transient send failures.
                 await asyncio.sleep(5)
 
         self.heartbeat_task = asyncio.create_task(heartbeat())

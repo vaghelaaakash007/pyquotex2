@@ -250,6 +250,8 @@ class QuotexAPI:
                         )
                     elif event == "balance":
                         self.account_balance = data
+                        if data is not None:
+                            self.slots.balance.set(data)
                         await self.event_registry.set_event(
                             'balance_ready', data
                         )
@@ -383,6 +385,8 @@ class QuotexAPI:
             if isinstance(message, dict):
                 if message.get("liveBalance") or message.get("demoBalance"):
                     self.account_balance = message
+                    if message is not None:
+                        self.slots.balance.set(message)
                     await self.event_registry.set_event(
                         'balance_ready', message
                     )

@@ -183,11 +183,11 @@ def make_parser() -> argparse.ArgumentParser:
     sub.add_parser("assets", help="List all available assets")
 
     # ── payout ───────────────────────────────────────────────────────────────
-    sub.add_parser("payout", help="Show payout % for all assets")
+    sub.add_parser("payout", help="Show payout %% for all assets")
 
     # ── payout-asset ─────────────────────────────────────────────────────────
     p = sub.add_parser("payout-asset",
-                       help="Show payout % for a specific asset")
+                       help="Show payout %% for a specific asset")
     _add_asset_flag(p)
     p.add_argument("--timeframe", default="1",
                    choices=["1", "5", "24", "all"],

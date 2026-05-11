@@ -655,6 +655,16 @@ class Quotex(OptimizedQuotexMixin):
         await self.api.edit_training_balance(
             amount if amount is not None else 0
         )
+        # TODO(refactor/architecture Phase 2.4): polling here cannot be migrated
+        # to SlotRegistry until we identify the WS event that should populate
+        # self.api.training_balance_edit_request. No producer exists in
+        # pyquotex/api.py:_on_message, so this method currently only exits via
+        # the timeout branch below. Investigate live WS traffic when refilling
+        # demo balance to find the correct producer event, then either:
+        #   (a) wire that handler to fire self.slots.training_balance_edit, or
+        #   (b) repoint this method to wait on self.slots.balance and return
+        #       the new balance dict (changes return shape — would be a
+        #       breaking change for any caller relying on the request payload).
         start = time.time()
         while self.api.training_balance_edit_request is None:
             if time.time() - start > timeout:

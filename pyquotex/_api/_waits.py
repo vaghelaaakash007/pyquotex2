@@ -57,3 +57,48 @@ async def wait_until(
             await asyncio.sleep(poll_interval)
 
     await asyncio.wait_for(_loop(), timeout=timeout)
+
+
+class SlotRegistry:
+    """Container of named and keyed WaitableSlots used by QuotexAPI.
+
+    Named slots are pre-created for one-off events (balance update, auth
+    status change, etc.). Keyed slots are dynamic per-request waits keyed
+    by request_id / operation_id; they are created lazily and released
+    once the consumer has read the value.
+    """
+
+    def __init__(self) -> None:
+        # Named slots
+        self.balance: WaitableSlot[dict] = WaitableSlot()
+        self.balance_update: WaitableSlot[dict] = WaitableSlot()
+        self.candle_v2_ready: WaitableSlot[str] = WaitableSlot()
+        self.historical_ready: WaitableSlot[str] = WaitableSlot()
+        self.pending_confirm: WaitableSlot[dict] = WaitableSlot()
+        self.sold_option_confirm: WaitableSlot[dict] = WaitableSlot()
+        self.training_balance_edit: WaitableSlot[dict] = WaitableSlot()
+        self.auth_status: WaitableSlot[bool] = WaitableSlot()
+
+        # Keyed slots (created on demand)
+        self._order_confirm: dict[str, WaitableSlot[dict]] = {}
+        self._win_result: dict[str, WaitableSlot[dict]] = {}
+
+    def order_confirm(self, request_id: str) -> WaitableSlot[dict]:
+        slot = self._order_confirm.get(request_id)
+        if slot is None:
+            slot = WaitableSlot()
+            self._order_confirm[request_id] = slot
+        return slot
+
+    def release_order_confirm(self, request_id: str) -> None:
+        self._order_confirm.pop(request_id, None)
+
+    def win_result(self, operation_id: str) -> WaitableSlot[dict]:
+        slot = self._win_result.get(operation_id)
+        if slot is None:
+            slot = WaitableSlot()
+            self._win_result[operation_id] = slot
+        return slot
+
+    def release_win_result(self, operation_id: str) -> None:
+        self._win_result.pop(operation_id, None)

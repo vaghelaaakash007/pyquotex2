@@ -60,3 +60,36 @@ async def test_wait_until_resolves_when_predicate_true():
 async def test_wait_until_times_out():
     with pytest.raises(asyncio.TimeoutError):
         await wait_until(lambda: False, timeout=0.05)
+
+
+from pyquotex._api._waits import SlotRegistry
+
+
+def test_slot_registry_has_named_slots():
+    reg = SlotRegistry()
+    assert reg.balance is not None
+    assert reg.balance_update is not None
+    assert reg.candle_v2_ready is not None
+    assert reg.historical_ready is not None
+    assert reg.pending_confirm is not None
+    assert reg.sold_option_confirm is not None
+    assert reg.training_balance_edit is not None
+    assert reg.auth_status is not None
+
+
+def test_slot_registry_keyed_slots_create_on_access():
+    reg = SlotRegistry()
+    slot_a = reg.order_confirm("req-1")
+    slot_b = reg.order_confirm("req-1")
+    slot_c = reg.order_confirm("req-2")
+    assert slot_a is slot_b  # same key returns same slot
+    assert slot_a is not slot_c  # different key returns different slot
+
+
+def test_slot_registry_keyed_slot_release():
+    reg = SlotRegistry()
+    slot = reg.order_confirm("req-1")
+    slot.set({"id": 1})
+    reg.release_order_confirm("req-1")
+    new_slot = reg.order_confirm("req-1")
+    assert new_slot is not slot

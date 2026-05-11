@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Any, Callable
 
 from pyquotex.utils import json_utils as json
+from pyquotex.exceptions import QuotexTimeoutError
 from . import expiration
 from .api import QuotexAPI
 from .config import (
@@ -675,14 +676,13 @@ class Quotex(OptimizedQuotexMixin):
                 balance = self.api.account_balance.get("liveBalance", 0)
             return float(f"{truncate(balance + self.get_profit(), 2):.2f}")
 
-        try:
-            # Wait for WebSocket event signaling balance arrival
-            await self.api.event_registry.wait_event(
-                'balance_ready', timeout=timeout
-            )
-        except TimeoutError:
-            logger.error(f"Timeout waiting for balance after {timeout}s")
-            raise
+        if self.api.account_balance is None:
+            try:
+                await self.api.slots.balance.wait(timeout=timeout)
+            except asyncio.TimeoutError:
+                raise QuotexTimeoutError(
+                    f"get_balance timed out after {timeout}s"
+                )
 
         if self.api.account_balance is None:
             return 0.0

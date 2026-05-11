@@ -46,6 +46,16 @@ Prover ferramentas para desenvolvedores integrarem seus sistemas com a plataform
 https://cleitonleonel.github.io/pyquotex/
 
 
+## 🏗 Arquitectura interna
+
+- `pyquotex.stable_api.Quotex` — facade público (la API que usás).
+- `pyquotex._api/*` — mixins por dominio (account, trading, history, realtime, assets).
+- `pyquotex.cli/*` — entrada de comandos del CLI.
+- `pyquotex.api.QuotexAPI` — cliente WebSocket subyacente.
+
+La interfaz pública no cambia entre 1.0.x y 1.1.0.
+
+
 ## 🛠 Instalação
 
 ### 1. Clone o repositório:

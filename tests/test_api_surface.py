@@ -1,30 +1,15 @@
 """Regression test: Quotex's public surface must not shrink during refactors."""
-import inspect
 import json
 from pathlib import Path
 
 from pyquotex.stable_api import Quotex
+from scripts.surface_utils import extract_surface
 
 FIXTURE = Path(__file__).parent / "fixtures" / "api_surface.json"
 
 
 def _current_surface() -> dict[str, dict]:
-    surface: dict[str, dict] = {}
-    for name in sorted(dir(Quotex)):
-        if name.startswith("_"):
-            continue
-        attr = getattr(Quotex, name)
-        if callable(attr):
-            try:
-                sig = inspect.signature(attr)
-            except (TypeError, ValueError):
-                surface[name] = {"kind": "callable"}
-                continue
-            params = [p.name for p in sig.parameters.values()]
-            surface[name] = {"kind": "method", "params": params}
-        else:
-            surface[name] = {"kind": "attribute"}
-    return surface
+    return extract_surface(Quotex, full_signatures=False)
 
 
 def test_public_methods_present():

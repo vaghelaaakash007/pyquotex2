@@ -86,6 +86,7 @@ class SlotRegistry:
         self.candle_v2_ready: WaitableSlot[str] = WaitableSlot()
         self.historical_ready: WaitableSlot[str] = WaitableSlot()
         self.pending_confirm: WaitableSlot[dict] = WaitableSlot()
+        self.buy_confirm: WaitableSlot[dict] = WaitableSlot()
         self.sold_option_confirm: WaitableSlot[dict] = WaitableSlot()
         self.training_balance_edit: WaitableSlot[dict] = WaitableSlot()
         self.auth_status: WaitableSlot[bool] = WaitableSlot()

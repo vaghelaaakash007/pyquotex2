@@ -369,12 +369,16 @@ class QuotexAPI:
                         if 'pending' in self._temp_status:
                             self.pending_id = data.get("id")
                             self.pending_successful = True
+                            if self.pending_id is not None:
+                                self.slots.pending_confirm.set({"id": self.pending_id})
                             await self.event_registry.set_event(
                                 'pending_confirmed', data
                             )
                         else:
                             self.buy_id = data.get("id")
                             self.buy_successful = True
+                            if self.buy_id is not None:
+                                self.slots.buy_confirm.set({"id": self.buy_id})
                             await self.event_registry.set_event(
                                 'buy_confirmed', data
                             )
@@ -415,6 +419,8 @@ class QuotexAPI:
                 ):
                     # Potential order confirmation
                     self.buy_id = message.get("id")
+                    if self.buy_id is not None:
+                        self.slots.buy_confirm.set({"id": self.buy_id})
                     await self.event_registry.set_event(
                         'buy_confirmed', message
                     )
@@ -428,6 +434,8 @@ class QuotexAPI:
                 data = message[1]
                 order_id = data.get("id")
                 self.buy_id = order_id
+                if self.buy_id is not None:
+                    self.slots.buy_confirm.set({"id": self.buy_id})
 
                 # Update listinfodata for check_win
                 if "profit" in data and "status" in data:

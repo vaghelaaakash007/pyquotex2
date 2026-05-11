@@ -1093,9 +1093,9 @@ class Quotex(OptimizedQuotexMixin):
         request_id = expiration.get_timestamp()
         is_fast_option = time_mode.upper() == "TIME"
 
-        # Clear event state before requesting buy to prevent
+        # Clear slot state before requesting buy to prevent
         # race with WS response
-        await self.api.event_registry.clear_event('buy_confirmed')
+        self.api.slots.buy_confirm.clear()
 
         # Ensure price data is arriving and server is synced
         await self.start_realtime_price(asset, duration)
@@ -1106,16 +1106,17 @@ class Quotex(OptimizedQuotexMixin):
             amount, asset, direction, duration, request_id, is_fast_option, time_mode
         )
 
-        timeout = duration + 5 if duration else 30
+        timeout = duration + 5 if duration else DEFAULT_TIMEOUT
 
-        try:
-            # Wait for WebSocket event signaling buy confirmation
-            event_data = await self.api.event_registry.wait_event(
-                'buy_confirmed', timeout=timeout
-            )
-        except TimeoutError as e:
-            logger.error(str(e))
-            return False, "Timeout"
+        if self.api.buy_id is None:
+            try:
+                event_data = await self.api.slots.buy_confirm.wait(timeout=timeout)
+            except asyncio.TimeoutError:
+                raise QuotexTimeoutError(
+                    f"buy timed out after {timeout}s"
+                )
+        else:
+            event_data = {"id": self.api.buy_id}
 
         if self.api.state.check_websocket_if_error:
             return False, self.api.state.websocket_error_reason
@@ -1142,6 +1143,7 @@ class Quotex(OptimizedQuotexMixin):
             return False, "API not initialized"
 
         self.api.pending_id = None
+        self.api.slots.pending_confirm.clear()
         user_settings = await self.get_profile()
         offset_zone = user_settings.offset if user_settings else 0
         open_time_int = int(
@@ -1155,18 +1157,19 @@ class Quotex(OptimizedQuotexMixin):
         await self.api.open_pending(
             amount, asset, direction, duration, open_time_int
         )
-        start = time.time()
-        while await self.check_connect() and self.api.pending_id is None:
-            if time.time() - start > 30:
-                logger.error("Timeout pending order.")
-                return False, "Timeout waiting for pending ID"
-            await asyncio.sleep(0.2)
-            if self.api.state.check_websocket_if_error:
-                return False, self.api.state.websocket_error_reason
+        if self.api.pending_id is None:
+            try:
+                await self.api.slots.pending_confirm.wait(timeout=DEFAULT_TIMEOUT)
+            except asyncio.TimeoutError:
+                raise QuotexTimeoutError(
+                    f"open_pending timed out after {DEFAULT_TIMEOUT}s"
+                )
 
-        # Loop exited normally — pending_id was set (success path).
-        # Only follow up when we actually have an id; if the loop was
-        # broken by disconnect the early returns above already handled it.
+        if self.api.state.check_websocket_if_error:
+            return False, self.api.state.websocket_error_reason
+
+        # pending_id was set (success path).
+        status_buy = False
         if self.api.pending_id is not None:
             status_buy = True
             await self.api.instruments_follow(
@@ -1188,6 +1191,13 @@ class Quotex(OptimizedQuotexMixin):
         # arrives before the next line, it must not be wiped out.
         self.api.sold_options_respond = None
         await self.api.sell_option(options_ids)
+        # TODO(refactor/architecture Phase 2.5): polling here cannot be migrated
+        # to SlotRegistry until we identify the WS event that should populate
+        # self.api.sold_options_respond. No producer exists in
+        # pyquotex/api.py:_on_message, so this method currently only exits via
+        # the timeout branch below (or never, if no explicit timeout). Same
+        # situation as edit_practice_balance — investigate WS traffic during
+        # sell_option calls to find the correct event.
         start = time.time()
         while self.api.sold_options_respond is None:
             if time.time() - start > timeout:

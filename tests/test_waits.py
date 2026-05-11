@@ -74,6 +74,11 @@ def test_slot_registry_has_named_slots():
     assert reg.auth_status is not None
 
 
+def test_slot_registry_has_buy_confirm():
+    reg = SlotRegistry()
+    assert reg.buy_confirm is not None
+
+
 def test_slot_registry_keyed_slots_create_on_access():
     reg = SlotRegistry()
     slot_a = reg.order_confirm("req-1")

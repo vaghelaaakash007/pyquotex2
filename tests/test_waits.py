@@ -134,3 +134,21 @@ def test_slot_registry_win_result_release():
     reg.release_win_result("op-1")
     new_slot = reg.win_result("op-1")
     assert new_slot is not slot
+
+
+def test_quotex_api_has_slot_registry():
+    """QuotexAPI must expose a SlotRegistry as .slots."""
+    from pyquotex.api import QuotexAPI
+
+    api = QuotexAPI(
+        host="qxbroker.com",
+        username="x",
+        password="x",
+        lang="en",
+        proxies=None,
+        resource_path=".",
+        user_data_dir="browser",
+        on_otp_callback=None,
+    )
+    assert isinstance(api.slots, SlotRegistry)
+    assert api.slots.balance is not None

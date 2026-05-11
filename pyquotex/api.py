@@ -119,6 +119,8 @@ class QuotexAPI:
         self.browser.set_headers()
         self.settings = Settings(self)
         self.event_registry = EventRegistry()
+        from pyquotex._api._waits import SlotRegistry
+        self.slots = SlotRegistry()
         self.profit_today: float | None = None
         self.heartbeat_task: asyncio.Task | None = None
 

@@ -10,37 +10,37 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'float'>",
+          "annotation": "float",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "amount"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "direction"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "duration"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "'TIME'",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "time_mode"
         }
       ],
-      "return_annotation": "tuple[bool, typing.Any]"
+      "return_annotation": "tuple[bool, Any]"
     }
   },
   "buy_optimized": {
@@ -98,37 +98,37 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "indicator"
         },
         {
-          "annotation": "dict[str, typing.Any] | None",
+          "annotation": "dict[str, Any] | None",
           "default": "None",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "params"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "3600",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "history_size"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "60",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "timeframe"
         }
       ],
-      "return_annotation": "dict[str, typing.Any]"
+      "return_annotation": "dict[str, Any]"
     }
   },
   "change_account": {
@@ -142,13 +142,13 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "balance_mode"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "0",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "tournament_id"
@@ -168,13 +168,13 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "time_offset"
         }
       ],
-      "return_annotation": "typing.Any"
+      "return_annotation": "Any"
     }
   },
   "check_asset_open": {
@@ -188,13 +188,13 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset_name"
         }
       ],
-      "return_annotation": "tuple[list[typing.Any] | None, tuple[typing.Any, typing.Any, typing.Any]]"
+      "return_annotation": "tuple[list[Any] | None, tuple[Any, Any, Any]]"
     }
   },
   "check_connect": {
@@ -228,7 +228,7 @@
           "name": "order_id"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "0",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "duration"
@@ -282,13 +282,13 @@
           "name": "amount"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "30",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "timeout"
         }
       ],
-      "return_annotation": "dict[str, typing.Any]"
+      "return_annotation": "dict[str, Any]"
     }
   },
   "get_all_asset_name": {
@@ -330,19 +330,19 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset_name"
         },
         {
-          "annotation": "<class 'bool'>",
+          "annotation": "bool",
           "default": "False",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "force_open"
         }
       ],
-      "return_annotation": "tuple[str, typing.Any]"
+      "return_annotation": "tuple[str, Any]"
     }
   },
   "get_balance": {
@@ -356,13 +356,13 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "30",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "timeout"
         }
       ],
-      "return_annotation": "<class 'float'>"
+      "return_annotation": "float"
     }
   },
   "get_balance_optimized": {
@@ -396,25 +396,25 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "period"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "30",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "timeout"
         }
       ],
-      "return_annotation": "list[dict[str, typing.Any]] | None"
+      "return_annotation": "list[dict[str, Any]] | None"
     }
   },
   "get_candles": {
@@ -428,7 +428,7 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset"
@@ -440,31 +440,37 @@
           "name": "end_from_time"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "offset"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "period"
         },
         {
-          "annotation": "<class 'bool'>",
+          "annotation": "bool",
           "default": "False",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "progressive"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "30",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "timeout"
+        },
+        {
+          "annotation": "bool",
+          "default": "False",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "use_cache"
         }
       ],
-      "return_annotation": "list[dict[str, typing.Any]] | None"
+      "return_annotation": "list[dict[str, Any]] | None"
     }
   },
   "get_candles_deep": {
@@ -478,19 +484,19 @@
           "name": "self"
         },
         {
-          "annotation": "typing.Any",
+          "annotation": "Any",
           "default": "<no-default>",
           "kind": "VAR_POSITIONAL",
           "name": "args"
         },
         {
-          "annotation": "typing.Any",
+          "annotation": "Any",
           "default": "<no-default>",
           "kind": "VAR_KEYWORD",
           "name": "kwargs"
         }
       ],
-      "return_annotation": "list[dict[str, typing.Any]]"
+      "return_annotation": "list[dict[str, Any]]"
     }
   },
   "get_candles_optimized": {
@@ -536,43 +542,43 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "amount_of_seconds"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "period"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "30",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "timeout"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "5",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "max_workers"
         },
         {
-          "annotation": "typing.Optional[typing.Callable[[int, int, int, str], NoneType]]",
+          "annotation": "Callable[[int, int, int, str], None] | None",
           "default": "None",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "progress_callback"
         }
       ],
-      "return_annotation": "list[dict[str, typing.Any]]"
+      "return_annotation": "list[dict[str, Any]]"
     }
   },
   "get_history": {
@@ -586,7 +592,7 @@
           "name": "self"
         }
       ],
-      "return_annotation": "list[dict[str, typing.Any]]"
+      "return_annotation": "list[dict[str, Any]]"
     }
   },
   "get_history_line": {
@@ -600,31 +606,31 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset"
         },
         {
-          "annotation": "<class 'float'>",
+          "annotation": "float",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "end_from_time"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "offset"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "30",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "timeout"
         }
       ],
-      "return_annotation": "dict[str, typing.Any] | None"
+      "return_annotation": "dict[str, Any] | None"
     }
   },
   "get_instruments": {
@@ -638,13 +644,13 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "30",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "timeout"
         }
       ],
-      "return_annotation": "list[typing.Any]"
+      "return_annotation": "list[Any]"
     }
   },
   "get_instruments_optimized": {
@@ -678,7 +684,7 @@
           "name": "self"
         }
       ],
-      "return_annotation": "dict[str, typing.Any]"
+      "return_annotation": "dict[str, Any]"
     }
   },
   "get_payout_by_asset": {
@@ -692,19 +698,19 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset_name"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "'1'",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "timeframe"
         }
       ],
-      "return_annotation": "float | dict[str, typing.Any] | None"
+      "return_annotation": "float | dict[str, Any] | None"
     }
   },
   "get_profile": {
@@ -718,7 +724,7 @@
           "name": "self"
         }
       ],
-      "return_annotation": "typing.Any"
+      "return_annotation": "Any"
     }
   },
   "get_profit": {
@@ -732,7 +738,7 @@
           "name": "self"
         }
       ],
-      "return_annotation": "<class 'float'>"
+      "return_annotation": "float"
     }
   },
   "get_realtime_candles": {
@@ -746,13 +752,13 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset"
         }
       ],
-      "return_annotation": "list[typing.Any] | dict[typing.Any, typing.Any]"
+      "return_annotation": "list[Any] | dict[Any, Any]"
     }
   },
   "get_realtime_price": {
@@ -766,13 +772,13 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset"
         }
       ],
-      "return_annotation": "list[dict[str, typing.Any]]"
+      "return_annotation": "list[dict[str, Any]]"
     }
   },
   "get_realtime_sentiment": {
@@ -786,13 +792,13 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset"
         }
       ],
-      "return_annotation": "dict[str, typing.Any]"
+      "return_annotation": "dict[str, Any]"
     }
   },
   "get_result": {
@@ -806,13 +812,13 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "operation_id"
         }
       ],
-      "return_annotation": "tuple[str | None, typing.Any]"
+      "return_annotation": "tuple[str | None, Any]"
     }
   },
   "get_server_time": {
@@ -826,7 +832,7 @@
           "name": "self"
         }
       ],
-      "return_annotation": "<class 'int'>"
+      "return_annotation": "int"
     }
   },
   "get_signal_data": {
@@ -840,7 +846,7 @@
           "name": "self"
         }
       ],
-      "return_annotation": "dict[str, typing.Any]"
+      "return_annotation": "dict[str, Any]"
     }
   },
   "get_trader_history": {
@@ -854,19 +860,19 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "account_type"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "page_number"
         }
       ],
-      "return_annotation": "dict[str, typing.Any]"
+      "return_annotation": "dict[str, Any]"
     }
   },
   "open_pending": {
@@ -880,25 +886,25 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'float'>",
+          "annotation": "float",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "amount"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "direction"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "duration"
@@ -910,7 +916,7 @@
           "name": "open_time"
         }
       ],
-      "return_annotation": "tuple[bool, typing.Any]"
+      "return_annotation": "tuple[bool, Any]"
     }
   },
   "opening_closing_current_candle": {
@@ -924,19 +930,19 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "0",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "period"
         }
       ],
-      "return_annotation": "dict[str, typing.Any]"
+      "return_annotation": "dict[str, Any]"
     }
   },
   "prepare_candles": {
@@ -950,25 +956,25 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "period"
         },
         {
-          "annotation": "list[typing.Any] | None",
+          "annotation": "list[Any] | None",
           "default": "None",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "history"
         }
       ],
-      "return_annotation": "list[dict[str, typing.Any]]"
+      "return_annotation": "list[dict[str, Any]]"
     }
   },
   "re_subscribe_stream": {
@@ -1016,13 +1022,13 @@
           "name": "options_ids"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "30",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "timeout"
         }
       ],
-      "return_annotation": "dict[str, typing.Any]"
+      "return_annotation": "dict[str, Any]"
     }
   },
   "sell_option_optimized": {
@@ -1062,7 +1068,7 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "'PRACTICE'",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "balance_mode"
@@ -1114,13 +1120,13 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset"
         }
       ],
-      "return_annotation": "<class 'bool'>"
+      "return_annotation": "bool"
     }
   },
   "start_candles_one_stream": {
@@ -1134,19 +1140,19 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "size"
         }
       ],
-      "return_annotation": "<class 'bool'>"
+      "return_annotation": "bool"
     }
   },
   "start_candles_stream": {
@@ -1160,13 +1166,13 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "'EURUSD'",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "0",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "period"
@@ -1186,13 +1192,13 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "'turbo-option'",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "instrument"
@@ -1212,25 +1218,25 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "0",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "period"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "30",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "timeout"
         }
       ],
-      "return_annotation": "dict[int, typing.Any]"
+      "return_annotation": "dict[int, Any]"
     }
   },
   "start_realtime_price": {
@@ -1244,25 +1250,25 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "0",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "period"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "30",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "timeout"
         }
       ],
-      "return_annotation": "dict[str, typing.Any]"
+      "return_annotation": "dict[str, Any]"
     }
   },
   "start_realtime_sentiment": {
@@ -1276,25 +1282,25 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "0",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "period"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "30",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "timeout"
         }
       ],
-      "return_annotation": "dict[str, typing.Any]"
+      "return_annotation": "dict[str, Any]"
     }
   },
   "start_remaing_time": {
@@ -1336,7 +1342,7 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset"
@@ -1356,49 +1362,49 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "'EURUSD'",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "0",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "period"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "'TIMER'",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "time_mode"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "5",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "deal"
         },
         {
-          "annotation": "<class 'bool'>",
+          "annotation": "bool",
           "default": "False",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "percent_mode"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "1",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "percent_deal"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "30",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "timeout"
         }
       ],
-      "return_annotation": "dict[str, typing.Any]"
+      "return_annotation": "dict[str, Any]"
     }
   },
   "subscribe_indicator": {
@@ -1412,31 +1418,31 @@
           "name": "self"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "asset"
         },
         {
-          "annotation": "<class 'str'>",
+          "annotation": "str",
           "default": "<no-default>",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "indicator"
         },
         {
-          "annotation": "dict[str, typing.Any] | None",
+          "annotation": "dict[str, Any] | None",
           "default": "None",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "params"
         },
         {
-          "annotation": "typing.Optional[typing.Callable[[dict[str, typing.Any]], typing.Any]]",
+          "annotation": "Callable[[dict[str, Any]], Any] | None",
           "default": "None",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "callback"
         },
         {
-          "annotation": "<class 'int'>",
+          "annotation": "int",
           "default": "60",
           "kind": "POSITIONAL_OR_KEYWORD",
           "name": "timeframe"

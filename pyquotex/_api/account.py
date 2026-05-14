@@ -38,7 +38,8 @@ class AccountMixin:
             resource_path=self.resource_path,
             user_data_dir=self.user_data_dir,
             proxies=self.proxies,
-            on_otp_callback=self.on_otp_callback
+            on_otp_callback=self.on_otp_callback,
+            reconnect_policy=getattr(self, "reconnect_policy", None),
         )
 
         self.api.trace_ws = self.debug_ws_enable

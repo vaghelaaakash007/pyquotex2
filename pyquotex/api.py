@@ -3,7 +3,7 @@ import asyncio
 import logging
 import time
 from collections import defaultdict
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable
 
 import httpx
 
@@ -45,7 +45,8 @@ class QuotexAPI:
             proxies: dict[str, str] | None = None,
             resource_path: str | None = None,
             user_data_dir: str = ".",
-            on_otp_callback: Callable | None = None
+            on_otp_callback: Callable | None = None,
+            reconnect_policy: Any = None,
     ):
         """
         :param str host: The hostname or ip address of a Quotex server.
@@ -58,6 +59,7 @@ class QuotexAPI:
         """
         self.state = ConnectionState()
         self.on_otp_callback = on_otp_callback
+        self.reconnect_policy = reconnect_policy
         self._ws_send_lock = asyncio.Lock()
 
         self.socket_option_opened: dict[str, Any] = {}
@@ -124,6 +126,103 @@ class QuotexAPI:
         self.profit_today: float | None = None
         self.heartbeat_task: asyncio.Task | None = None
 
+        # Last time an inbound frame arrived; used by the stale watchdog
+        # in :class:`pyquotex.ws.client.WebsocketClient` to decide when
+        # to recycle a silent connection.
+        self.last_message_at: float = time.monotonic()
+
+        # Active stream subscriptions, replayed after auto-reconnect.
+        from pyquotex.types import Subscription  # local import to avoid cycle
+        self._subscriptions: dict[str, Subscription] = {}
+
+        # Dispatch table for "control" events: maps Socket.IO event name
+        # to an async handler taking the event payload. Refactor of the
+        # previous if/elif chain in :meth:`_on_message`.
+        self._control_handlers: dict[
+            str, Callable[[Any], Awaitable[None]]
+        ] = {
+            "s_authorization": self._h_auth_ok,
+            "instruments/list": self._h_instruments_list,
+            "trader/history": self._h_trader_history,
+            "balance": self._h_balance,
+            "candle-generated": self._h_candle_generated,
+            "sentiment": self._h_sentiment,
+        }
+
+    # ------------------------------------------------------------------
+    # Subscription tracking (replayed by WebsocketClient after reconnect)
+    # ------------------------------------------------------------------
+    def _track_subscription(
+        self,
+        kind: str,
+        asset: str,
+        period: int | None = None,
+        **extra: Any,
+    ) -> None:
+        """Record an active stream so it can be replayed after reconnect."""
+        from pyquotex.types import Subscription
+        key = f"{kind}:{asset}:{period or 0}"
+        self._subscriptions[key] = Subscription(
+            kind=kind,  # type: ignore[arg-type]
+            asset=asset,
+            period=period,
+            extra=dict(extra),
+        )
+
+    def _forget_subscription(
+        self, kind: str, asset: str, period: int | None = None
+    ) -> None:
+        key = f"{kind}:{asset}:{period or 0}"
+        self._subscriptions.pop(key, None)
+
+    # ------------------------------------------------------------------
+    # Control-event handlers (dispatch table targets)
+    # ------------------------------------------------------------------
+    async def _h_auth_ok(self, data: Any) -> None:
+        self.state.auth_status = AuthStatus.AUTHENTICATED
+        await self.event_registry.set_event(
+            "auth_changed", self.state.auth_status
+        )
+
+    async def _h_instruments_list(self, data: Any) -> None:
+        if isinstance(data, dict) and data.get("_placeholder"):
+            self._temp_status = (
+                '451-["instruments/list",'
+                f'{json.dumps_str(data)}]'
+            )
+        else:
+            self.instruments = data
+            await self.event_registry.set_event("instruments_ready", data)
+
+    async def _h_trader_history(self, data: Any) -> None:
+        await self.event_registry.set_event("history_ready", data)
+
+    async def _h_balance(self, data: Any) -> None:
+        self.account_balance = data
+        if data is not None:
+            self.slots.balance.set(data)
+        await self.event_registry.set_event("balance_ready", data)
+
+    async def _h_candle_generated(self, data: Any) -> None:
+        if not isinstance(data, dict):
+            return
+        asset = data.get("asset")
+        period = data.get("period")
+        if asset and period:
+            self.candle_generated_check[str(asset)][int(period)] = data
+            self.candle_generated_all_size_check[str(asset)] = data
+
+    async def _h_sentiment(self, data: Any) -> None:
+        if not isinstance(data, dict):
+            return
+        asset = data.get("asset")
+        if asset:
+            self.traders_mood[asset] = data
+            self.realtime_sentiment[asset] = data
+
+    # ------------------------------------------------------------------
+    # WebSocket lifecycle
+    # ------------------------------------------------------------------
     async def _on_open(self) -> None:
         """Called when WebSocket connection is established."""
         logger.info("Websocket client connected.")
@@ -155,6 +254,8 @@ class QuotexAPI:
 
     async def _on_message(self, msg: bytes | str) -> None:
         """Called for every WebSocket message received."""
+        # Stale-detection watchdog reads this timestamp.
+        self.last_message_at = time.monotonic()
         try:
             message: Any = None
             msg_str = (
@@ -224,7 +325,7 @@ class QuotexAPI:
                     self._temp_status = msg_str
                     return
 
-                # Standard Event Processing
+                # Standard Event Processing — dispatch via table for O(1) lookup.
                 if (
                         isinstance(message, list)
                         and len(message) > 1
@@ -232,49 +333,9 @@ class QuotexAPI:
                 ):
                     event = message[0]
                     data = message[1]
-
-                    if event == "s_authorization":
-                        self.state.auth_status = AuthStatus.AUTHENTICATED
-                        await self.event_registry.set_event(
-                            "auth_changed", self.state.auth_status
-                        )
-                    elif event == "instruments/list":
-                        if isinstance(data, dict) and data.get("_placeholder"):
-                            self._temp_status = (
-                                '451-["instruments/list",'
-                                f'{json.dumps_str(data)}]'
-                            )
-                        else:
-                            self.instruments = data
-                            await self.event_registry.set_event(
-                                'instruments_ready', data
-                            )
-                    elif event == "trader/history":
-                        await self.event_registry.set_event(
-                            'history_ready', data
-                        )
-                    elif event == "balance":
-                        self.account_balance = data
-                        if data is not None:
-                            self.slots.balance.set(data)
-                        await self.event_registry.set_event(
-                            'balance_ready', data
-                        )
-                    elif event == "candle-generated":
-                        asset = data.get("asset")
-                        period = data.get("period")
-                        if asset and period:
-                            self.candle_generated_check[str(asset)][
-                                int(period)
-                            ] = data
-                            self.candle_generated_all_size_check[
-                                str(asset)
-                            ] = data
-                    elif event == "sentiment":
-                        asset = data.get("asset")
-                        if asset:
-                            self.traders_mood[asset] = data
-                            self.realtime_sentiment[asset] = data
+                    handler = self._control_handlers.get(event)
+                    if handler is not None:
+                        await handler(data)
 
             # 2. Handle Data Payloads (Placeholder fulfillment)
             elif message is not None and not is_control:
@@ -809,7 +870,9 @@ class QuotexAPI:
         if not self.state.SSID:
             await self.authenticate()
 
-        self.websocket_client = WebsocketClient(self)
+        self.websocket_client = WebsocketClient(
+            self, reconnect_policy=self.reconnect_policy
+        )
 
         # Ensure we have a valid User-Agent, fallback to a modern one if missing
         ua = (

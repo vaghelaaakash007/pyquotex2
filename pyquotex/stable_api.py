@@ -14,6 +14,7 @@ from .config import (
     resource_path
 )
 from .global_value import AuthStatus
+from .types import ReconnectPolicy
 from .utils.account_type import AccountType
 from .utils.optimization import OptimizedQuotexMixin
 
@@ -41,7 +42,8 @@ class Quotex(
             asset_default: str = "EURUSD",
             period_default: int = 60,
             proxies: dict[str, str] | None = None,
-            on_otp_callback: Callable | None = None
+            on_otp_callback: Callable | None = None,
+            reconnect_policy: ReconnectPolicy | None = None,
     ):
         """
         Initializes the Quotex stable API wrapper.
@@ -60,6 +62,10 @@ class Quotex(
                 Defaults to 60.
             proxies (dict, optional): Proxy configuration.
             on_otp_callback (callable, optional): Callback for 2FA/OTP input.
+            reconnect_policy (ReconnectPolicy, optional): Auto-reconnect /
+                stale-detection configuration. Defaults to enabled with
+                exponential backoff. Pass ``ReconnectPolicy(enabled=False)``
+                to opt out.
         """
         self.size = [
             5, 10, 15, 30, 60, 120, 300, 600, 900, 1800,
@@ -89,6 +95,7 @@ class Quotex(
         session = load_session(self.email, user_agent)
         self.session_data = session
         self.on_otp_callback = on_otp_callback
+        self.reconnect_policy = reconnect_policy or ReconnectPolicy()
 
     @property
     def websocket(self) -> Any:
@@ -167,3 +174,14 @@ class Quotex(
         if self.api:
             return await self.api.close()
         return True
+
+    async def __aenter__(self) -> "Quotex":
+        """Async context manager: connects on enter."""
+        ok, reason = await self.connect()
+        if not ok:
+            raise ConnectionError(f"Quotex connect failed: {reason}")
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb) -> None:
+        """Async context manager: closes the connection on exit."""
+        await self.close()

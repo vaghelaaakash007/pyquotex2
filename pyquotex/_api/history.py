@@ -14,10 +14,19 @@ from typing import Any, Callable
 from pyquotex import expiration
 from pyquotex._api._constants import DEFAULT_TIMEOUT, _request_counter
 from pyquotex.utils import json_utils as json
+from pyquotex.utils.cache import TTLCache
 from pyquotex.utils.processor import (
     calculate_candles,
     process_candles_v2,
     merge_candles,
+)
+
+# Per-process cache of recent get_candles() responses. Keyed by
+# (asset, period, offset, candle_bucket). TTL stays well under the candle
+# period so live data is never served stale. Off by default; opt in by
+# passing use_cache=True.
+_CANDLE_CACHE: TTLCache[tuple[str, int, int, int], list[dict[str, Any]]] = (
+    TTLCache(maxsize=128, ttl=10.0)
 )
 
 logger = logging.getLogger(__name__)
@@ -33,14 +42,32 @@ class HistoryMixin:
             offset: int,
             period: int,
             progressive: bool = False,
-            timeout: int = DEFAULT_TIMEOUT
+            timeout: int = DEFAULT_TIMEOUT,
+            use_cache: bool = False,
     ) -> list[dict[str, Any]] | None:
-        """Retrieves candles for a specific asset."""
+        """Retrieve candles for a specific asset.
+
+        Parameters
+        ----------
+        use_cache:
+            When ``True``, identical ``(asset, period, offset, candle_bucket)``
+            requests within the cache TTL (~10s) are served from memory.
+            ``candle_bucket`` floors ``end_from_time`` to the candle period
+            so live data is never served stale.
+        """
         if self.api is None:
             return None
 
         if end_from_time is None:
             end_from_time = time.time()
+
+        cache_key: tuple[str, int, int, int] | None = None
+        if use_cache and not progressive and period > 0:
+            bucket = int(end_from_time // period)
+            cache_key = (asset, period, offset, bucket)
+            cached = _CANDLE_CACHE.get(cache_key)
+            if cached is not None:
+                return cached
 
         index = expiration.get_timestamp()
         self.api.candles.candles_data = None
@@ -70,6 +97,11 @@ class HistoryMixin:
 
         if progressive:
             return self.api.historical_candles.get("data", {})
+
+        if cache_key is not None and candles:
+            # TTL is the minimum between period and the cache default so
+            # the candle bucket never serves data after the candle closes.
+            _CANDLE_CACHE.set(cache_key, candles, ttl=min(_CANDLE_CACHE.ttl, period))
 
         return candles
 

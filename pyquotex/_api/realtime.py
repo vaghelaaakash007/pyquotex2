@@ -376,12 +376,14 @@ class RealtimeMixin:
             await self.api.subscribe_realtime_candle(asset, period)
             await self.api.chart_notification(asset)
             await self.api.follow_candle(asset)
+            self.api._track_subscription("candle", asset, period)
 
     async def stop_candles_stream(self, asset: str) -> None:
         """Stops streaming candle data for a specified asset."""
         if self.api:
             await self.api.unsubscribe_realtime_candle(asset)
             await self.api.unfollow_candle(asset)
+            self.api._forget_subscription("candle", asset)
 
     async def start_signals_data(self) -> None:
         """Subscribes to the global trading signals stream."""
@@ -555,6 +557,7 @@ class RealtimeMixin:
         self.api.candle_generated_all_size_check[str(asset)] = {}
         if not (str(asset) in self.subscribe_candle_all_size):
             self.subscribe_candle_all_size.append(str(asset))
+        self.api._track_subscription("candle_all_size", asset)
         start = time.time()
         while await self.check_connect():
             if self.api is None: break
@@ -590,6 +593,7 @@ class RealtimeMixin:
 
         if asset not in self.subscribe_mood:
             self.subscribe_mood.append(asset)
+        self.api._track_subscription("mood", asset, instrument=instrument)
         while True:
             if self.api is None: break
             if hasattr(self.api, "subscribe_Traders_mood"):

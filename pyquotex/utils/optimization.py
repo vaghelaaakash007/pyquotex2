@@ -1,13 +1,17 @@
 """Optimized async event-driven utilities for Quotex API.
 
-Performance improvements:
-- 90% latency reduction for balance/status checks
-- Non-blocking waits with proper cancellation
-- Automatic timeout handling
+.. deprecated:: 1.2
+    The main ``Quotex`` methods (``get_balance``, ``get_instruments``,
+    ``get_candles``, ``buy``, ``sell_option``) are now themselves
+    event-driven via :class:`~pyquotex._api._waits.SlotRegistry` /
+    :class:`~pyquotex.utils.async_utils.EventRegistry`. The ``_optimized``
+    variants in this mixin are kept for backward compatibility and either
+    delegate to the real methods or fall back to their event-based path.
 """
 
 import asyncio
 import logging
+import warnings
 from typing import Any, Callable
 
 from pyquotex.global_value import WebsocketStatus
@@ -16,8 +20,21 @@ from pyquotex.utils.async_utils import AsyncEvent
 logger = logging.getLogger(__name__)
 
 
+def _deprecated(replacement: str) -> None:
+    warnings.warn(
+        f"Use {replacement} instead — the _optimized variant is deprecated "
+        "now that the main methods are event-driven.",
+        DeprecationWarning,
+        stacklevel=3,
+    )
+
+
 class OptimizedQuotexMixin:
-    """Mixin providing optimized async methods for Quotex client."""
+    """Mixin providing optimized async methods for Quotex client.
+
+    .. deprecated:: 1.2
+        See module docstring.
+    """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize event registry for optimized waits."""
@@ -191,92 +208,38 @@ class OptimizedQuotexMixin:
         duration: int,
             timeout: float | None = None
     ) -> dict[str, Any]:
-        """Buy option using event-driven result notification.
-        
-        Replaces polling with event notification from WebSocket handler.
-        Automatically uses order duration as timeout if not specified.
-        
-        Args:
-            asset: Asset name (e.g., 'EURUSD')
-            amount: Trade amount
-            direction: 'call' or 'put'
-            duration: Option duration in seconds
-            timeout: Maximum wait time (defaults to duration + 5s)
-            
-        Returns:
-            Buy result dictionary
-            
-        Raises:
-            TimeoutError: If result not received within timeout
-            RuntimeError: If connection lost or WebSocket error
+        """.. deprecated:: 1.2 — use :meth:`Quotex.buy` directly.
+
+        Delegates to the real buy path, which is itself event-driven via
+        :class:`~pyquotex._api._waits.SlotRegistry`.
         """
-        if (
-                not hasattr(self, "api")
-                or not self.api
-                or not await self.check_connect()
-        ):
-            raise RuntimeError("Not connected to Quotex")
-        
-        if timeout is None:
-            timeout = duration + 5  # Buffer time after expiration
-        
-        # Make the actual buy call (existing logic)
-        # ... buy logic here ...
-        
-        # Wait for result with timeout
-        try:
-            result = await self._buy_result_event.wait(timeout=timeout)
-            return dict(result or {"success": self.api.buy_successful})
-        except TimeoutError:
-            raise TimeoutError(
-                f"Timeout waiting for buy confirmation after {timeout}s"
-            )
-        except Exception as e:
-            logger.error(f"Error during buy operation: {e}")
-            if self.api.state.status == WebsocketStatus.ERROR:
-                raise RuntimeError("WebSocket error during buy operation")
-            raise
+        _deprecated("Quotex.buy()")
+        ok, data = await self.buy(  # type: ignore[attr-defined]
+            amount, asset, direction, duration
+        )
+        return {"success": ok, "data": data}
 
     def _signal_buy_result(self, result: dict[str, Any]) -> None:
-        """Called by WebSocket handler when buy result is received."""
+        """.. deprecated:: 1.2 — buy results are now fired via SlotRegistry."""
         self._buy_result_event.set(result)
-    
+
     async def sell_option_optimized(
         self,
             options_ids: list[Any],
         timeout: float = 30.0
     ) -> dict[str, Any]:
-        """Sell option using event-driven result notification.
-        
-        Replaces polling with event notification from WebSocket handler.
-        
-        Args:
-            options_ids: List of option IDs to sell
-            timeout: Maximum wait time in seconds
-            
-        Returns:
-            Sell result dictionary
-            
-        Raises:
-            TimeoutError: If result not received within timeout
+        """.. deprecated:: 1.2 — use :meth:`Quotex.sell_option` directly.
+
+        Delegates to the real sell path which now uses ``wait_until`` with
+        a hard timeout (see :func:`pyquotex._api._waits.wait_until`).
         """
-        if not hasattr(self, "api") or not self.api:
-            raise RuntimeError("Not connected to Quotex")
-        
-        # Make the actual sell call (existing logic)
-        # ... sell logic here ...
-        
-        # Wait for result with timeout
-        try:
-            result = await self._sell_result_event.wait(timeout=timeout)
-            return dict(result or self.api.sold_options_respond)
-        except TimeoutError:
-            raise TimeoutError(
-                f"Timeout waiting for sell option response after {timeout}s"
-            )
+        _deprecated("Quotex.sell_option()")
+        return await self.sell_option(  # type: ignore[attr-defined]
+            options_ids, timeout=int(timeout)
+        )
 
     def _signal_sell_result(self, result: dict[str, Any]) -> None:
-        """Called by WebSocket handler when sell result is received."""
+        """.. deprecated:: 1.2 — sell results are now fired via SlotRegistry."""
         self._sell_result_event.set(result)
 
 

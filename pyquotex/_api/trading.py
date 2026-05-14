@@ -13,6 +13,7 @@ from typing import Any
 
 from pyquotex import expiration
 from pyquotex._api._constants import DEFAULT_TIMEOUT
+from pyquotex._api._waits import wait_until
 from pyquotex.utils.account_type import AccountType
 
 logger = logging.getLogger(__name__)
@@ -137,18 +138,18 @@ class TradingMixin:
         # arrives before the next line, it must not be wiped out.
         self.api.sold_options_respond = None
         await self.api.sell_option(options_ids)
-        # TODO(refactor/architecture Phase 2.5): polling here cannot be migrated
-        # to SlotRegistry until we identify the WS event that should populate
-        # self.api.sold_options_respond. No producer exists in
-        # pyquotex/api.py:_on_message, so this method currently only exits via
-        # the timeout branch below (or never, if no explicit timeout). Same
-        # situation as edit_practice_balance — investigate WS traffic during
-        # sell_option calls to find the correct event.
-        start = time.time()
-        while self.api.sold_options_respond is None:
-            if time.time() - start > timeout:
-                raise TimeoutError("Timeout waiting for sell option response.")
-            await asyncio.sleep(0.2)
+        # We don't yet have an identified WS event that populates
+        # sold_options_respond, so we still settle via predicate-polling —
+        # but through wait_until() (event-loop friendly, hard timeout,
+        # configurable poll interval) instead of an ad-hoc while/sleep.
+        try:
+            await wait_until(
+                lambda: self.api.sold_options_respond is not None,
+                timeout=float(timeout),
+                poll_interval=0.2,
+            )
+        except asyncio.TimeoutError:
+            raise TimeoutError("Timeout waiting for sell option response.")
         return self.api.sold_options_respond
 
     async def check_win(

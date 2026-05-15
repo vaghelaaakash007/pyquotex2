@@ -40,7 +40,7 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-      - run: pip install -r requirements.txt mypy
+      - run: pip install -e ".[test]" mypy
       - name: mypy (public surface only)
         run: |
           mypy --ignore-missing-imports --no-strict-optional \
@@ -64,7 +64,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-      - run: pip install -r requirements.txt pytest pytest-asyncio pytest-mock pytest-cov
+      - run: pip install -e ".[test]"
       - name: pytest (offline only)
         env:
           PYQUOTEX_LIVE: "0"

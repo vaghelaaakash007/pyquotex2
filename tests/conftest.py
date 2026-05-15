@@ -40,6 +40,10 @@ _LIVE_TEST_MODULES: frozenset[str] = frozenset({
 })
 
 
+def _live_enabled() -> bool:
+    return os.environ.get("PYQUOTEX_LIVE", "").lower() in {"1", "true", "yes"}
+
+
 def pytest_configure(config: pytest.Config) -> None:
     """Register custom markers used across the test suite."""
     for marker, description in (
@@ -50,11 +54,27 @@ def pytest_configure(config: pytest.Config) -> None:
         config.addinivalue_line("markers", f"{marker}: {description}")
 
 
+def pytest_ignore_collect(collection_path, config: pytest.Config) -> bool | None:
+    """Skip *collection* of legacy live modules when ``PYQUOTEX_LIVE`` is off.
+
+    Several legacy ``test_*.py`` files call :func:`pyquotex.config.credentials`
+    at module import time, which blocks on ``input()`` when ``settings/config.ini``
+    is missing (as is the case on CI). Collecting them at all would crash the
+    run before any test executes, so we drop them entirely outside live mode.
+    """
+    if _live_enabled():
+        return None
+    stem = collection_path.stem  # filename without extension
+    if stem in _LIVE_TEST_MODULES:
+        return True
+    return None
+
+
 def pytest_collection_modifyitems(
     config: pytest.Config, items: list[pytest.Item]
 ) -> None:
-    """Auto-mark legacy live tests and skip them unless ``PYQUOTEX_LIVE=1``."""
-    live_enabled = os.environ.get("PYQUOTEX_LIVE", "").lower() in {"1", "true", "yes"}
+    """Auto-mark live tests; skip them at runtime unless ``PYQUOTEX_LIVE=1``."""
+    live_enabled = _live_enabled()
     skip_live = pytest.mark.skip(
         reason="live test (set PYQUOTEX_LIVE=1 to enable)"
     )

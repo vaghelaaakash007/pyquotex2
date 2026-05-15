@@ -40,6 +40,31 @@ pytest-mock = "^3.12.0"
 asyncio_mode = "auto"
 testpaths = ["tests"]
 
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = [
+    "examples",
+    # Legacy network/optimization code uses idioms ruff flags but rewriting
+    # them is out of scope for the resilience / typing PR. Tighten over time.
+    "pyquotex/network/login.py",
+    "pyquotex/network/navigator.py",
+    "pyquotex/utils/optimization.py",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = [
+    "E501",  # line-too-long — handled by ruff format
+    "E701",  # one-liner `if x: return` is fine in this codebase
+    "E712",  # `== True` comparisons in legacy ConnectionState properties
+    "E713",  # `not (x in y)` style appears a few times in legacy code
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["F401", "F811", "F541"]  # tests intentionally import-and-discard
+"scripts/*" = ["F401", "F541"]
+
 [build-system]
 requires = ["poetry-core>=2.0.0"]
 build-backend = "poetry.core.masonry.api"

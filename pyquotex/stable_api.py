@@ -8,11 +8,7 @@ from ._api.history import HistoryMixin
 from ._api.realtime import RealtimeMixin
 from ._api.trading import TradingMixin
 from .api import QuotexAPI
-from .config import (
-    load_session,
-    update_session,
-    resource_path
-)
+from .config import load_session, resource_path, update_session
 from .global_value import AuthStatus
 from .types import ReconnectPolicy
 from .utils.account_type import AccountType
@@ -44,6 +40,7 @@ class Quotex(
             proxies: dict[str, str] | None = None,
             on_otp_callback: Callable | None = None,
             reconnect_policy: ReconnectPolicy | None = None,
+            wss_url_override: str | None = None,
     ):
         """
         Initializes the Quotex stable API wrapper.
@@ -96,6 +93,7 @@ class Quotex(
         self.session_data = session
         self.on_otp_callback = on_otp_callback
         self.reconnect_policy = reconnect_policy or ReconnectPolicy()
+        self.wss_url_override = wss_url_override
 
     @property
     def websocket(self) -> Any:

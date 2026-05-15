@@ -7,11 +7,7 @@ from typing import Any, Awaitable, Callable
 
 import httpx
 
-from .global_value import (
-    ConnectionState,
-    WebsocketStatus,
-    AuthStatus
-)
+from .global_value import AuthStatus, ConnectionState, WebsocketStatus
 from .network.history import GetHistory
 from .network.login import Login
 from .network.logout import Logout
@@ -47,6 +43,7 @@ class QuotexAPI:
             user_data_dir: str = ".",
             on_otp_callback: Callable | None = None,
             reconnect_policy: Any = None,
+            wss_url_override: str | None = None,
     ):
         """
         :param str host: The hostname or ip address of a Quotex server.
@@ -56,6 +53,10 @@ class QuotexAPI:
         :param proxies: The proxies of a Quotex server.
         :param user_data_dir: The path browser user data dir.
         :param on_otp_callback: Callback function for OTP (2FA) input.
+        :param wss_url_override: Replace the computed ``wss://ws2.{host}``
+            URL with this value. Primarily a test hook so the offline
+            integration tests can point at a local replay server, but
+            also useful for routing through a custom proxy.
         """
         self.state = ConnectionState()
         self.on_otp_callback = on_otp_callback
@@ -86,7 +87,11 @@ class QuotexAPI:
 
         self.host = host
         self.https_url = f"https://{host}"
-        self.wss_url = f"wss://ws2.{host}/socket.io/?EIO=3&transport=websocket"
+        self.wss_url = (
+            wss_url_override
+            if wss_url_override
+            else f"wss://ws2.{host}/socket.io/?EIO=3&transport=websocket"
+        )
         self.wss_message: str | None = None
         self.websocket_client: WebsocketClient | None = None
         self._websocket_task: asyncio.Task | None = None
@@ -406,7 +411,7 @@ class QuotexAPI:
                         if order_id:
                             profit = order.get("profit", 0)
                             win = "win" if profit > 0 else "loss"
-                            # Check if it's in a closed list or has a 
+                            # Check if it's in a closed list or has a
                             # close status
                             is_closed = (
                                     any(
@@ -546,7 +551,7 @@ class QuotexAPI:
                     )
                     self.timesync.server_timestamp = ts  # Sync server clock
 
-                    # Limit realtime_price history to 1000 entries 
+                    # Limit realtime_price history to 1000 entries
                     # to prevent memory bloat
                     price_list = self.realtime_price[asset]
                     price_list.append({"time": ts, "price": price})
@@ -621,7 +626,7 @@ class QuotexAPI:
         """
         Authenticates the user using the provided credentials.
 
-        Performs HTTP login, retrieves cookies and SSID token, 
+        Performs HTTP login, retrieves cookies and SSID token,
         and updates the browser session.
 
         Returns:
@@ -892,11 +897,18 @@ class QuotexAPI:
             "Pragma": "no-cache",
             "Sec-WebSocket-Extensions": "permessage-deflate; client_max_window_bits",
         }
+        # Skip SSL for plain ws:// (test / proxy / dev) — the websockets
+        # library expects no SSLContext on a non-TLS URL.
+        ssl_ctx = (
+            self.browser._ssl_context
+            if self.wss_url.startswith("wss://")
+            else None
+        )
         self._websocket_task = asyncio.create_task(
             self.websocket_client.run_forever(
                 url=self.wss_url,
                 extra_headers=extra_headers,
-                ssl=self.browser._ssl_context
+                ssl=ssl_ctx,
             )
         )
         for _ in range(100):
@@ -980,7 +992,7 @@ class QuotexAPI:
         """
         Retrieves and parses the user profile data.
 
-        Updates the internal profile object with nickname, balances, 
+        Updates the internal profile object with nickname, balances,
         country, and timezone.
 
         Returns:

@@ -25,7 +25,7 @@ client = Quotex(
     email=email,
     password=password,
     lang="pt",
-    is_demo=is_demo
+    demo=is_demo          # <-- fixed: use 'demo' instead of 'is_demo'
 )
 
 # ==================== STRATEGY COLLECTION ====================

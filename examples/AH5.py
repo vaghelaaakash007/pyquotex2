@@ -14,7 +14,6 @@ client = Quotex(
     lang="pt",
 )
 
-
 # ==================== ACCOUNT TYPE ENUM ====================
 class AccountType(IntEnum):
     REAL = 0

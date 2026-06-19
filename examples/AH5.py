@@ -1,12 +1,18 @@
 # examples/trade_bot.py
 
 import asyncio
+import signal
 import random
-from collections import deque
-from enum import IntEnum
-
 from pyquotex.config import credentials
 from pyquotex.stable_api import Quotex
+from collections import deque
+
+email, password = credentials()
+client = Quotex(
+    email=email,
+    password=password,
+    lang="pt",
+)
 
 
 # ==================== ACCOUNT TYPE ENUM ====================

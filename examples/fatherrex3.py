@@ -564,14 +564,22 @@ def get_user_config():
     stop_loss = float(input("🛑 Stop Loss (0=off): $"))
     stop_profit = float(input("🎯 Stop Profit (0=off): $"))
     
+    # --- ASSET SHUFFLING INPUT ---
+    print("\n💱 Trading currencies (comma separated, e.g. AUDCAD,USDJPY,USDCAD,USDBRL_OTC)")
+    assets_input = input("👉 Assets: ").strip()
+    asset_list = [a.strip().upper() for a in assets_input.split(",") if a.strip()]
+    if not asset_list:
+        asset_list = ["AUDCAD"]   # fallback
+    
     print("\n" + "="*50)
     print("✅ CONFIGURATION SAVED")
     print(f"Strategy: {strategy_manager.active_strategy.name if strategy_manager.active_strategy else 'Random'}")
     print(f"Max Trades: {'∞' if max_trades == 0 else max_trades}")
     print(f"Base Amount: ${base_amount}")
+    print(f"Assets: {', '.join(asset_list)}")
     print("="*50 + "\n")
     
-    return max_trades, base_amount, stop_loss, stop_profit, strategy_manager
+    return max_trades, base_amount, stop_loss, stop_profit, strategy_manager, asset_list
 
 
 # ==================== MONEY MANAGEMENT ====================
@@ -605,6 +613,27 @@ def check_stop_limits(initial_balance, current_balance, stop_loss, stop_profit):
         return True, f"🛑 STOP LOSS! -${abs(profit_loss):.2f}"
     
     return False, ""
+
+
+# ==================== ASSET SHUFFLING HELPER ====================
+def pick_next_asset(asset_list, client, last_asset=None):
+    """
+    Randomly pick an open asset from the list.
+    If none are open, fallback to a random one from the list.
+    """
+    open_assets = []
+    for asset in asset_list:
+        try:
+            name, data = client.get_available_asset(asset, force_open=False)
+            if data[2]:  # index 2 = is_open
+                open_assets.append(asset)
+        except:
+            pass
+
+    if open_assets:
+        return random.choice(open_assets)
+    else:
+        return random.choice(asset_list)
 
 
 # ==================== TRADING FUNCTIONS ====================
@@ -677,14 +706,13 @@ async def cleanup():
 
 
 async def trade_and_monitor():
-    max_trades, base_amount, stop_loss, stop_profit, strategy_manager = get_user_config()
+    max_trades, base_amount, stop_loss, stop_profit, strategy_manager, asset_list = get_user_config()
     
     try:
         check_connect, message = await client.connect()
         if check_connect:
             # ===== INITIAL SETUP =====
             amount = base_amount
-            asset = "AUDCAD"
             direction = "call"
             duration = 60
             balance = await client.get_balance()
@@ -693,7 +721,9 @@ async def trade_and_monitor():
             trade_count = 0
             total_wins = 0
             total_losses = 0
-            win_streak = 0  # ← WIN STREAK TRACKER
+            win_streak = 0
+            
+            last_asset = None  # Track the previously used asset
             
             print("\n" + "="*50)
             print("📊 SESSION STARTED")
@@ -703,90 +733,75 @@ async def trade_and_monitor():
             print(f"Current Amount: ${amount}")
             print(f"Win Streak: {win_streak}")
             print("="*50 + "\n")
-            
-            asset_name, asset_data = await client.get_available_asset(asset, force_open=True)
 
-            if asset_data[2]:
-                print("✅ Asset is open\n")
+            while True:
+                # ===== CHECK LIMITS =====
+                if max_trades > 0 and trade_count >= max_trades:
+                    print(f"\n✅ MAX TRADES ({max_trades}) DONE!")
+                    break
+                
+                should_stop, stop_reason = check_stop_limits(initial_balance, balance, stop_loss, stop_profit)
+                if should_stop:
+                    print(f"\n{stop_reason}")
+                    break
+                
+                print(f"{'='*100}")
+                
+                # ===== PICK A NEW ASSET =====
+                current_asset = pick_next_asset(asset_list, client, last_asset)
+                
+                # Reset strategy history if the asset changed
+                if current_asset != last_asset and strategy_manager.active_strategy:
+                    strategy_manager.active_strategy.price_history.clear()
+                    strategy_manager.active_strategy.volume_history.clear()
+                    print(f"🔄 Switched to {current_asset} – history reset")
+                last_asset = current_asset
+                
+                # ===== GET SIGNAL =====
+                if strategy_manager.active_strategy:
+                    signal_direction, signal_strength = await strategy_manager.get_signal(current_asset, client)
+                    if signal_direction and signal_strength >= 60:
+                        direction = signal_direction
+                    else:
+                        await asyncio.sleep(3)
+                        continue
+                
+                # ===== EXECUTE TRADE =====
+                trade_count += 1
+                print(f"\n📈 TRADE #{trade_count}")
+                print(f"   Asset: {current_asset} | Amount: ${amount} | Direction: {direction.upper()}")
+                print(f"   Win Streak: {win_streak}")
+                
+                # Verify asset still open
+                asset_name, asset_data = await client.get_available_asset(current_asset, force_open=True)
+                if not asset_data[2]:
+                    print(f"⚠️ {current_asset} is closed, skipping...")
+                    await asyncio.sleep(2)
+                    continue
+                
+                check_connect = await client.check_connect()
+                if not check_connect:
+                    check_connect, message = await client.connect()
 
-                while True:
-                    # ===== CHECK LIMITS =====
-                    if max_trades > 0 and trade_count >= max_trades:
-                        print(f"\n✅ MAX TRADES ({max_trades}) DONE!")
-                        break
-                    
-                    should_stop, stop_reason = check_stop_limits(initial_balance, balance, stop_loss, stop_profit)
-                    if should_stop:
-                        print(f"\n{stop_reason}")
-                        break
-                    
-                    print(f"{'='*100}")
-                    
-                    # ===== GET SIGNAL =====
-                    if strategy_manager.active_strategy:
-                        signal_direction, signal_strength = await strategy_manager.get_signal(asset_name, client)
-                        if signal_direction and signal_strength >= 60:
-                            direction = signal_direction
-                        else:
-                            await asyncio.sleep(3)
-                            continue
-                    
-                    # ===== EXECUTE TRADE =====
-                    trade_count += 1
-                    print(f"\n📈 TRADE #{trade_count}")
-                    print(f"   Amount: ${amount} | Direction: {direction.upper()}")
-                    print(f"   Win Streak: {win_streak}")
-                    
-                    check_connect = await client.check_connect()
-                    if not check_connect:
-                        check_connect, message = await client.connect()
+                balance_before = balance
+                status, buy_info = await client.buy(amount, asset_name, direction, duration)
+                
+                if status:
+                    balance -= amount
+                    await analise_sentiment(asset_name, duration)
+                    result = await check_result(buy_info, direction, asset_name)
 
-                    balance_before = balance
-                    status, buy_info = await client.buy(amount, asset_name, direction, duration)
-                    
-                    if status:
-                        balance -= amount
-                        await analise_sentiment(asset_name, duration)
-                        result = await check_result(buy_info, direction, asset_name)
-
-                        # ===== WIN CASE =====
-                        if result == "Win":
-                            balance, profit = await calculate_profit(asset_name, amount, balance)
-                            total_wins += 1
-                            
-                            if strategy_manager.active_strategy:
-                                strategy_manager.update_stats(True)
-                            
-                            print(f"\n{'─'*50}")
-                            print(f"✅ WIN #{trade_count}")
-                            print(f"   Profit: ${profit:.2f}")
-                            print(f"   Balance: ${balance:.2f}")
-                            print(f"   P/L: ${balance - initial_balance:.2f}")
-                            print(f"   Wins: {total_wins} | Losses: {total_losses}")
-                            if trade_count > 0:
-                                print(f"   Win Rate: {total_wins/trade_count*100:.1f}%")
-                            print(f"{'─'*50}")
-                            
-                            # ===== UPDATE AMOUNT & WIN STREAK =====
-                            amount, win_streak = get_next_amount(amount, base_amount, True, win_streak)
-                            print(f"💰 Next Amount: ${amount} | Streak: {win_streak}")
-                            continue
-
-                        # ===== DOJI CASE =====
-                        if result == "Doji":
-                            print("⚪ DOJI - No change")
-                            continue
-
-                        # ===== LOSS CASE (NO MARTINGALE) =====
-                        if strategy_manager.active_strategy:
-                            strategy_manager.update_stats(False)
+                    # ===== WIN CASE =====
+                    if result == "Win":
+                        balance, profit = await calculate_profit(asset_name, amount, balance)
+                        total_wins += 1
                         
-                        total_losses += 1
-                        loss = balance_before - balance  # equals the bet amount
+                        if strategy_manager.active_strategy:
+                            strategy_manager.update_stats(True)
                         
                         print(f"\n{'─'*50}")
-                        print(f"❌ LOSS #{trade_count}")
-                        print(f"   Loss: ${loss:.2f}")
+                        print(f"✅ WIN #{trade_count}")
+                        print(f"   Profit: ${profit:.2f}")
                         print(f"   Balance: ${balance:.2f}")
                         print(f"   P/L: ${balance - initial_balance:.2f}")
                         print(f"   Wins: {total_wins} | Losses: {total_losses}")
@@ -794,16 +809,40 @@ async def trade_and_monitor():
                             print(f"   Win Rate: {total_wins/trade_count*100:.1f}%")
                         print(f"{'─'*50}")
                         
-                        # ===== RESET AMOUNT & WIN STREAK ON LOSS =====
-                        amount, win_streak = get_next_amount(amount, base_amount, False, win_streak)
+                        # ===== UPDATE AMOUNT & WIN STREAK =====
+                        amount, win_streak = get_next_amount(amount, base_amount, True, win_streak)
                         print(f"💰 Next Amount: ${amount} | Streak: {win_streak}")
+                        continue
 
-                    else:
-                        print("❌ Buy failed")
-                        await asyncio.sleep(2)
+                    # ===== DOJI CASE =====
+                    if result == "Doji":
+                        print("⚪ DOJI - No change")
+                        continue
 
-            else:
-                print("❌ Asset closed")
+                    # ===== LOSS CASE (NO MARTINGALE) =====
+                    if strategy_manager.active_strategy:
+                        strategy_manager.update_stats(False)
+                    
+                    total_losses += 1
+                    loss = balance_before - balance
+                    
+                    print(f"\n{'─'*50}")
+                    print(f"❌ LOSS #{trade_count}")
+                    print(f"   Loss: ${loss:.2f}")
+                    print(f"   Balance: ${balance:.2f}")
+                    print(f"   P/L: ${balance - initial_balance:.2f}")
+                    print(f"   Wins: {total_wins} | Losses: {total_losses}")
+                    if trade_count > 0:
+                        print(f"   Win Rate: {total_wins/trade_count*100:.1f}%")
+                    print(f"{'─'*50}")
+                    
+                    # ===== RESET AMOUNT & WIN STREAK ON LOSS =====
+                    amount, win_streak = get_next_amount(amount, base_amount, False, win_streak)
+                    print(f"💰 Next Amount: ${amount} | Streak: {win_streak}")
+
+                else:
+                    print("❌ Buy failed")
+                    await asyncio.sleep(2)
 
         else:
             print("❌ Connection failed")

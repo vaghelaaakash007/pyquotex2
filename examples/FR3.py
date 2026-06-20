@@ -398,9 +398,9 @@ class QuantumTradingBot:
         self.stop_profit = 0
         self.trading_mode = "1"  # 1=Fixed, 2=Martingale, 3=Compound
         
-        # Compound strategy specific tracking
-        self.loss_streak = 0          # consecutive losses
-        self.last_trade_amount = 10   # amount used in the most recent trade (initialized to base)
+        # For compound mode (loss recovery)
+        self.loss_streak = 0
+        self.current_trade_amount = self.trade_amount
         
         # Markets to scan
         self.markets = {
@@ -449,6 +449,8 @@ class QuantumTradingBot:
         # Trading parameters
         console.print("\n[bold yellow]⚙️ Trading Parameters:[/bold yellow]")
         self.trade_amount = float(input("💰 Trade Amount ($): "))
+        self.current_trade_amount = self.trade_amount  # reset for compound
+        self.loss_streak = 0
         self.min_confidence = float(input("🎯 Min Confidence % (70-95): ") or "70")
         max_t = input("🔄 Max Trades (0=unlimited): ")
         self.max_trades = int(max_t) if max_t else 0
@@ -459,7 +461,7 @@ class QuantumTradingBot:
         console.print("\n[bold]Trading Mode:[/bold]")
         console.print("1. 📊 Fixed Amount")
         console.print("2. 🔄 Martingale")
-        console.print("3. 📈 Compounding")
+        console.print("3. 📈 Compound (Loss Recovery: 2x, 2.4x, 2.5x, 2.6x, reset on win or 5 losses)")
         self.trading_mode = input("👉 Choose (1/2/3): ").strip() or "1"
         
         # Backtesting option
@@ -645,14 +647,15 @@ class QuantumTradingBot:
     
     def get_next_amount(self, last_win):
         """
-        Calculate next trade amount based on trading mode.
-        For Compound mode (3), implements:
-        - After win: reset to base amount.
+        Calculate next trade amount based on mode.
+        
+        Mode 3 (Compound) implements:
+        - Reset to base after every win.
         - After 1st loss: base * 2
-        - After 2nd loss: previous amount * 2.4
-        - After 3rd loss: previous amount * 2.5
-        - After 4th loss: previous amount * 2.6
-        - After 5th loss: reset to base (streak resets)
+        - After 2nd loss: previous trade amount * 2.4
+        - After 3rd loss: previous trade amount * 2.5
+        - After 4th loss: previous trade amount * 2.6
+        - After 5 consecutive losses: reset to base amount.
         """
         base = self.trade_amount
         
@@ -670,30 +673,38 @@ class QuantumTradingBot:
                 self.martingale_losses += 1
                 return base * (2 ** min(self.martingale_losses, 4))
         
-        elif self.trading_mode == "3":  # Compound (UPDATED per request)
+        elif self.trading_mode == "3":  # Compound (custom loss recovery)
             if last_win:
                 # Reset on win
                 self.loss_streak = 0
-                self.last_trade_amount = base
+                self.current_trade_amount = base
                 return base
             else:
-                # Loss -> increase streak
+                # Loss: increment streak and calculate next amount
                 self.loss_streak += 1
-                
                 if self.loss_streak == 1:
                     amount = base * 2.0
                 elif self.loss_streak == 2:
-                    amount = self.last_trade_amount * 2.4
+                    amount = self.current_trade_amount * 2.4
                 elif self.loss_streak == 3:
-                    amount = self.last_trade_amount * 2.5
+                    amount = self.current_trade_amount * 2.5
                 elif self.loss_streak == 4:
-                    amount = self.last_trade_amount * 2.6
-                else:  # >= 5 losses -> reset to base
+                    amount = self.current_trade_amount * 2.6
+                elif self.loss_streak >= 5:
+                    # Reset after 5 losses
                     self.loss_streak = 0
                     amount = base
+                else:
+                    amount = base  # fallback
                 
-                # Store the amount used for this trade (for next loss multiplication)
-                self.last_trade_amount = amount
+                # Safety: cap to 25% of current balance
+                max_allowed = self.current_balance * 0.25 if self.current_balance > 0 else base
+                if amount > max_allowed:
+                    amount = max_allowed
+                if amount < base:
+                    amount = base
+                
+                self.current_trade_amount = amount
                 return amount
         
         return base
@@ -720,7 +731,7 @@ class QuantumTradingBot:
         
         self.is_running = True
         trade_count = 0
-        last_was_win = True   # initial state: treat as win so first trade uses base
+        last_was_win = True
         
         console.print("\n[bold green]🤖 BOT STARTED! Scanning markets...[/bold green]")
         console.print("[dim]Press Ctrl+C to stop[/dim]\n")
@@ -761,7 +772,7 @@ class QuantumTradingBot:
                     
                     console.print(f"\n[bold red]🚨 EXECUTE NOW! 🚨[/bold red]")
                     
-                    # Get trade amount (pass last_was_win to determine progression)
+                    # Get trade amount based on mode
                     amount = self.get_next_amount(last_was_win)
                     
                     # Execute trade
@@ -774,7 +785,7 @@ class QuantumTradingBot:
                     
                     if result:
                         trade_count += 1
-                        last_was_win = result['result'] == 'WIN'
+                        last_was_win = (result['result'] == 'WIN')
                     
                     console.print(f"\n[dim]💰 Balance: ${self.current_balance:.2f} | Trades: {trade_count}[/dim]")
                 

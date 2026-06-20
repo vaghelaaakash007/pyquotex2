@@ -705,16 +705,18 @@ async def get_user_config():
 
 
 # ==================== MONEY MANAGEMENT (UPDATED) ====================
-def get_next_amount_with_loss(base_amount, is_win, win_streak, loss_streak):
+def get_next_amount_with_loss(base_amount, is_win, win_streak, loss_streak, prev_amount):
     """
     Money management rules:
-    - Wins: 
-        * 1st win in a row: amount = base * 1.5
+    - Wins:
+        * 1st win: amount = base * 1.5
         * 2nd consecutive win: reset to base (win_streak=0)
     - Losses:
-        * 1st loss: amount = base * 2.4
-        * 2nd & 3rd losses: keep amount = base * 2.4
-        * 4th consecutive loss: reset to base, loss_streak=0
+        * 1st loss: amount = base * 2.0
+        * 2nd loss: amount = prev_amount * 2.4
+        * 3rd loss: amount = prev_amount * 2.6
+        * 4th loss: amount = prev_amount * 2.8
+        * 5th consecutive loss: reset to base (loss_streak=0)
     """
     if is_win:
         win_streak += 1
@@ -726,12 +728,23 @@ def get_next_amount_with_loss(base_amount, is_win, win_streak, loss_streak):
     else:
         loss_streak += 1
         win_streak = 0
-        if loss_streak == 4:
-            # Reset after 4 losses
+        if loss_streak == 5:
+            # Reset after 5 losses
             return base_amount, 0, 0
+        elif loss_streak == 1:
+            # First loss: base * 2
+            return base_amount * 2.0, 0, loss_streak
         else:
-            # First, second, or third loss: use 2.4x multiplier
-            return base_amount * 2.4, 0, loss_streak
+            # Second, third, fourth loss: multiply previous amount by factor
+            if loss_streak == 2:
+                factor = 2.4
+            elif loss_streak == 3:
+                factor = 2.6
+            elif loss_streak == 4:
+                factor = 2.8
+            else:
+                factor = 1.0  # fallback, should not happen
+            return prev_amount * factor, 0, loss_streak
 
 
 def check_stop_limits(initial, current, sl, sp):
@@ -867,7 +880,7 @@ async def single_asset_mode(config):
                 continue
         
         trade_count += 1
-        print(f"\n📈 TRADE #{trade_count} | ${amount} | {direction.upper()} | Streak: W{win_streak} L{loss_streak}")
+        print(f"\n📈 TRADE #{trade_count} | ${amount:.2f} | {direction.upper()} | Streak: W{win_streak} L{loss_streak}")
         
         if not await client.check_connect():
             await client.connect()
@@ -887,7 +900,8 @@ async def single_asset_mode(config):
             total_wins += 1
             total_profit += profit
             print(f"   ✅ WIN! +${profit:.2f} | Bal: ${balance:.2f} | {total_wins}W/{total_losses}L")
-            amount, win_streak, loss_streak = get_next_amount_with_loss(base_amount, True, win_streak, loss_streak)
+            # Pass the current amount as prev_amount (not used for win but kept for consistency)
+            amount, win_streak, loss_streak = get_next_amount_with_loss(base_amount, True, win_streak, loss_streak, amount)
             if win_streak == 0:
                 print(f"   🔄 2 WINS RESET → ${amount:.2f}")
             else:
@@ -903,13 +917,21 @@ async def single_asset_mode(config):
         loss_amount = balance_before - balance
         total_loss_amount += loss_amount
         print(f"   ❌ LOSS! -${loss_amount:.2f} | Bal: ${balance:.2f} | {total_wins}W/{total_losses}L")
-        amount, win_streak, loss_streak = get_next_amount_with_loss(base_amount, False, win_streak, loss_streak)
+        # Save the amount that was used (prev_amount) for the loss
+        prev_amount_used = amount
+        amount, win_streak, loss_streak = get_next_amount_with_loss(base_amount, False, win_streak, loss_streak, prev_amount_used)
         if loss_streak == 0:
-            print(f"   🔄 4 LOSS RESET → ${amount:.2f}")
-        elif loss_streak == 1:
-            print(f"   📈 ×2.4 (first loss) → ${amount:.2f}")
+            print(f"   🔄 5 LOSS RESET → ${amount:.2f}")
         else:
-            print(f"   📈 ×2.4 (loss #{loss_streak}) → ${amount:.2f}")
+            # Show factor based on loss_streak
+            if loss_streak == 1:
+                print(f"   📈 ×2.0 (first loss) → ${amount:.2f}")
+            elif loss_streak == 2:
+                print(f"   📈 ×2.4 (second loss) → ${amount:.2f}")
+            elif loss_streak == 3:
+                print(f"   📈 ×2.6 (third loss) → ${amount:.2f}")
+            elif loss_streak == 4:
+                print(f"   📈 ×2.8 (fourth loss) → ${amount:.2f}")
     
     return initial_balance, balance, trade_count, total_wins, total_losses, total_profit, total_loss_amount
 
@@ -1008,7 +1030,7 @@ async def shuffle_mode(config):
         
         # Execute trade
         trade_count += 1
-        print(f"\n📈 TRADE #{trade_count} | ${amount} | {direction.upper()} | {asset} | Streak: W{win_streak} L{loss_streak}")
+        print(f"\n📈 TRADE #{trade_count} | ${amount:.2f} | {direction.upper()} | {asset} | Streak: W{win_streak} L{loss_streak}")
         
         if not await client.check_connect():
             await client.connect()
@@ -1028,7 +1050,7 @@ async def shuffle_mode(config):
             total_wins += 1
             total_profit += profit
             print(f"   ✅ WIN! +${profit:.2f} | Bal: ${balance:.2f} | {total_wins}W/{total_losses}L")
-            amount, win_streak, loss_streak = get_next_amount_with_loss(base_amount, True, win_streak, loss_streak)
+            amount, win_streak, loss_streak = get_next_amount_with_loss(base_amount, True, win_streak, loss_streak, amount)
             if win_streak == 0:
                 print(f"   🔄 2 WINS RESET → ${amount:.2f}")
             else:
@@ -1041,13 +1063,19 @@ async def shuffle_mode(config):
             loss_amount = balance_before - balance
             total_loss_amount += loss_amount
             print(f"   ❌ LOSS! -${loss_amount:.2f} | Bal: ${balance:.2f} | {total_wins}W/{total_losses}L")
-            amount, win_streak, loss_streak = get_next_amount_with_loss(base_amount, False, win_streak, loss_streak)
+            prev_amount_used = amount
+            amount, win_streak, loss_streak = get_next_amount_with_loss(base_amount, False, win_streak, loss_streak, prev_amount_used)
             if loss_streak == 0:
-                print(f"   🔄 4 LOSS RESET → ${amount:.2f}")
-            elif loss_streak == 1:
-                print(f"   📈 ×2.4 (first loss) → ${amount:.2f}")
+                print(f"   🔄 5 LOSS RESET → ${amount:.2f}")
             else:
-                print(f"   📈 ×2.4 (loss #{loss_streak}) → ${amount:.2f}")
+                if loss_streak == 1:
+                    print(f"   📈 ×2.0 (first loss) → ${amount:.2f}")
+                elif loss_streak == 2:
+                    print(f"   📈 ×2.4 (second loss) → ${amount:.2f}")
+                elif loss_streak == 3:
+                    print(f"   📈 ×2.6 (third loss) → ${amount:.2f}")
+                elif loss_streak == 4:
+                    print(f"   📈 ×2.8 (fourth loss) → ${amount:.2f}")
         
         await asyncio.sleep(1)
     

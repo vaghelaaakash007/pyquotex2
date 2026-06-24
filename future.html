@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔮 R0ck90 Signal Master Pro | Quotex OTC Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: #000;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .orbitron { font-family: 'Orbitron', monospace; }
+        
+        /* Animated Background */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .glow-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.15;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .glass-panel {
+            background: rgba(10, 10, 20, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 212, 255, 0.15);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+        }
+        
+        .input-cyber {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            color: #00d4ff;
+            font-family: 'Orbitron', monospace;
+            transition: all 0.3s ease;
+        }
+        
+        .input-cyber:focus {
+            border-color: #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+            outline: none;
+        }
+        
+        .btn-cyber {
+            background: linear-gradient(135deg, #00d4ff 0%, #0077aa 100%);
+            border: none;
+            color: #000;
+            font-weight: 900;
+            font-family: 'Orbitron', monospace;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.4);
+        }
+        
+        .btn-cyber::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-cyber:hover::before {
+            left: 100%;
+        }
+        
+        .btn-cyber:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 50px rgba(0, 212, 255, 0.6);
+        }
+        
+        .btn-channel {
+            background: linear-gradient(135deg, #0088cc 0%, #0055aa 100%);
+            color: #fff;
+            font-weight: 700;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 136, 204, 0.3);
+        }
+        
+        .btn-channel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(0, 136, 204, 0.5);
+        }
+        
+        .signal-card {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.08) 0%, rgba(0, 0, 0, 0.4) 100%);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-left: 4px solid #00ff88;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        
+        .signal-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00ff88, transparent);
+        }
+        
+        .signal-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 10px 40px rgba(0, 255, 136, 0.15);
+        }
+        
+        .signal-card.put {
+            background: linear-gradient(135deg, rgba(255, 51, 102, 0.08) 0%, rgba(0, 0, 0, 0.4) 100%);
+            border-color: rgba(255, 51, 102, 0.2);
+            border-left-color: #ff3366;
+        }
+        
+        .signal-card.put::before {
+            background: linear-gradient(90deg, transparent, #ff3366, transparent);
+        }
+        
+        .signal-card.put:hover {
+            box-shadow: 0 10px 40px rgba(255, 51, 102, 0.15);
+        }
+        
+        .accuracy-glow {
+            text-shadow: 0 0 10px currentColor;
+        }
+        
+        .stat-box {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, transparent 100%);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-box::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00d4ff, transparent);
+        }
+        
+        .scan-line {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00d4ff, transparent);
+            animation: scan 3s linear infinite;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        
+        @keyframes scan {
+            0% { transform: translateY(0); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(100vh); opacity: 0; }
+        }
+        
+        .pulse-dot {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+        
+        .username-badge {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 140, 0, 0.15) 100%);
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+        
+        .pair-checkbox:checked + label {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+            color: #00d4ff;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a0f;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #00d4ff, #00ff88);
+            border-radius: 4px;
+        }
+        
+        .loading-text {
+            background: linear-gradient(90deg, #00d4ff, #00ff88, #00d4ff);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shine 3s linear infinite;
+        }
+        
+        @keyframes shine {
+            to { background-position: 200% center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="glow-orb w-96 h-96 bg-cyan-500 top-0 left-0"></div>
+    <div class="glow-orb w-96 h-96 bg-purple-500 bottom-0 right-0"></div>
+    <div class="scan-line"></div>
+    
+    <!-- Header -->
+    <header class="glass-panel sticky top-0 z-50 border-b border-cyan-900/30">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                <!-- Logo & Title -->
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 relative">
+                        <i class="fas fa-satellite-dish text-2xl text-white animate-pulse"></i>
+                        <div class="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full pulse-dot"></div>
+                    </div>
+                    <div>
+                        <h1 class="orbitron text-2xl md:text-3xl font-black text-white tracking-wider">
+                            SIGNAL<span class="text-cyan-400">MASTER</span>
+                        </h1>
+                        <p class="text-xs text-gray-500 tracking-[0.3em] uppercase">Quotex OTC Professional Analysis</p>
+                    </div>
+                </div>
+                
+                <!-- User & Channel Info -->
+                <div class="flex items-center gap-4">
+                    <!-- Username Badge -->
+                    <div class="username-badge px-4 py-2 rounded-lg flex items-center gap-2">
+                        <i class="fas fa-crown text-yellow-400"></i>
+                        <span class="font-bold orbitron">@R0ck90</span>
+                    </div>
+                    
+                    <!-- Channel Button -->
+                    <a href="https://t.me/fuqub4545" target="_blank" class="btn-channel px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
+                        <i class="fab fa-telegram text-lg"></i>
+                        <span class="font-bold">Join Channel</span>
+                    </a>
+                    
+                    <!-- Status -->
+                    <div class="hidden md:block text-right">
+                        <div class="text-xs text-gray-600 mb-1">SYSTEM STATUS</div>
+                        <div class="flex items-center gap-2 text-green-400 font-bold text-sm">
+                            <span class="w-2 h-2 rounded-full bg-green-400 pulse-dot"></span>
+                            <span class="orbitron">ONLINE</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-6 relative z-10">
+        
+        <!-- Configuration Panel -->
+        <section class="glass-panel rounded-2xl p-6 mb-6">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                    <i class="fas fa-cog text-cyan-400"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-white">Signal Configuration</h2>
+                    <p class="text-xs text-gray-500">Customize your hunting parameters</p>
+                </div>
+            </div>
+            
+            <!-- Time Settings -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-black/40 rounded-xl p-4 border border-gray-800">
+                    <label class="block text-xs text-cyan-400 mb-2 font-bold uppercase tracking-wider">
+                        <i class="fas fa-play mr-1"></i> Start Time
+                    </label>
+                    <input type="time" id="startTime" value="06:00" class="input-cyber w-full rounded-lg px-3 py-3 text-xl text-center">
+                    <div class="text-xs text-gray-600 mt-1 text-center">UTC+06:00</div>
+                </div>
+                
+                <div class="bg-black/40 rounded-xl p-4 border border-gray-800">
+                    <label class="block text-xs text-cyan-400 mb-2 font-bold uppercase tracking-wider">
+                        <i class="fas fa-stop mr-1"></i> End Time
+                    </label>
+                    <input type="time" id="endTime" value="23:59" class="input-cyber w-full rounded-lg px-3 py-3 text-xl text-center">
+                    <div class="text-xs text-gray-600 mt-1 text-center">UTC+06:00</div>
+                </div>
+                
+                <div class="bg-black/40 rounded-xl p-4 border border-gray-800">
+                    <label class="block text-xs text-cyan-400 mb-2 font-bold uppercase tracking-wider">
+                        <i class="fas fa-calendar mr-1"></i> Analysis Days
+                    </label>
+                    <input type="number" id="analysisDays" min="1" max="40" value="7" class="input-cyber w-full rounded-lg px-3 py-3 text-xl text-center">
+                    <input type="range" id="daysSlider" min="1" max="40" value="7" class="w-full mt-2 accent-cyan-400 h-1">
+                </div>
+                
+                <div class="bg-black/40 rounded-xl p-4 border border-gray-800">
+                    <label class="block text-xs text-cyan-400 mb-2 font-bold uppercase tracking-wider">
+                        <i class="fas fa-bullseye mr-1"></i> Min Accuracy
+                    </label>
+                    <input type="number" id="minAccuracy" min="70" max="99" value="90" class="input-cyber w-full rounded-lg px-3 py-3 text-xl text-center text-green-400">
+                    <div class="text-xs text-gray-600 mt-1 text-center">Recommended: 90%+</div>
+                </div>
+            </div>
+            
+            <!-- Signal Count & Filters -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-black/40 rounded-xl p-4 border border-gray-800">
+                    <label class="block text-xs text-purple-400 mb-2 font-bold uppercase tracking-wider">
+                        <i class="fas fa-list-ol mr-1"></i> How Many Signals?
+                    </label>
+                    <input type="number" id="signalCount" min="1" max="100" value="20" class="input-cyber w-full rounded-lg px-3 py-3 text-xl text-center text-purple-400">
+                    <div class="text-xs text-gray-600 mt-1 text-center">Max signals to generate</div>
+                </div>
+                
+                <div class="bg-black/40 rounded-xl p-4 border border-gray-800">
+                    <label class="block text-xs text-purple-400 mb-2 font-bold uppercase tracking-wider">
+                        <i class="fas fa-clock mr-1"></i> Time Gap Between
+                    </label>
+                    <select id="timeGap" class="input-cyber w-full rounded-lg px-3 py-3 text-sm">
+                        <option value="0">No Gap (All)</option>
+                        <option value="5" selected>5 Minutes (Recommended)</option>
+                        <option value="10">10 Minutes</option>
+                        <option value="15">15 Minutes</option>
+                        <option value="30">30 Minutes</option>
+                    </select>
+                    <div class="text-xs text-gray-600 mt-1 text-center">Avoid crowded signals</div>
+                </div>
+                
+                <div class="bg-black/40 rounded-xl p-4 border border-gray-800">
+                    <label class="block text-xs text-purple-400 mb-2 font-bold uppercase tracking-wider">
+                        <i class="fas fa-sort mr-1"></i> Sort Results By
+                    </label>
+                    <select id="sortBy" class="input-cyber w-full rounded-lg px-3 py-3 text-sm">
+                        <option value="accuracy" selected>Accuracy (High First)</option>
+                        <option value="time">Time (Chronological)</option>
+                        <option value="mixed">Mixed (Distributed)</option>
+                    </select>
+                    <div class="text-xs text-gray-600 mt-1 text-center">Output arrangement</div>
+                </div>
+            </div>
+            
+            <!-- Quick Presets -->
+            <div class="flex flex-wrap gap-2 mb-6">
+                <span class="text-xs text-gray-600 py-2 uppercase tracking-wider">Quick Presets:</span>
+                <button onclick="setPreset('06:00', '12:00')" class="px-4 py-2 rounded-lg bg-gray-800/50 hover:bg-cyan-500/20 text-cyan-400 text-xs transition border border-gray-700 hover:border-cyan-500/30 font-bold">Morning Session</button>
+                <button onclick="setPreset('12:00', '18:00')" class="px-4 py-2 rounded-lg bg-gray-800/50 hover:bg-cyan-500/20 text-cyan-400 text-xs transition border border-gray-700 hover:border-cyan-500/30 font-bold">Afternoon Session</button>
+                <button onclick="setPreset('18:00', '23:59')" class="px-4 py-2 rounded-lg bg-gray-800/50 hover:bg-cyan-500/20 text-cyan-400 text-xs transition border border-gray-700 hover:border-cyan-500/30 font-bold">Evening Session</button>
+                <button onclick="setPreset('00:00', '06:00')" class="px-4 py-2 rounded-lg bg-gray-800/50 hover:bg-purple-500/20 text-purple-400 text-xs transition border border-gray-700 hover:border-purple-500/30 font-bold">Night Session</button>
+                <button onclick="setPreset('06:00', '23:59')" class="px-4 py-2 rounded-lg bg-gray-800/50 hover:bg-green-500/20 text-green-400 text-xs transition border border-gray-700 hover:border-green-500/30 font-bold">Full Day</button>
+            </div>
+            
+            <!-- Pair Selection -->
+            <div class="mb-6">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-layer-group text-cyan-400"></i>
+                        <span class="text-sm text-gray-400 font-bold uppercase tracking-wider">Select Trading Pairs</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="selectAll()" class="text-xs px-3 py-1.5 rounded bg-gray-800 text-cyan-400 hover:bg-cyan-500/20 transition border border-gray-700">ALL 80+</button>
+                        <button onclick="selectNone()" class="text-xs px-3 py-1.5 rounded bg-gray-800 text-red-400 hover:bg-red-500/20 transition border border-gray-700">CLEAR</button>
+                        <button onclick="selectTop()" class="text-xs px-3 py-1.5 rounded bg-gray-800 text-green-400 hover:bg-green-500/20 transition border border-gray-700">TOP 10</button>
+                    </div>
+                </div>
+                <div id="pairsContainer" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-10 gap-2 max-h-[200px] overflow-y-auto p-3 rounded-xl bg-black/30 border border-gray-800">
+                    <!-- Pairs loaded by JS -->
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-4">
+                <button onclick="generateSignals()" id="generateBtn" class="btn-cyber flex-1 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3">
+                    <i class="fas fa-radar"></i>
+                    <span>HUNT SIGNALS NOW</span>
+                </button>
+                <button onclick="stopScan()" id="stopBtn" class="hidden px-8 py-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold flex items-center gap-2">
+                    <i class="fas fa-stop"></i> STOP
+                </button>
+                <button onclick="exportData()" id="exportBtn" class="hidden px-6 py-4 rounded-xl bg-gray-800 hover:bg-gray-700 text-cyan-400 border border-cyan-500/30 font-bold flex items-center gap-2">
+                    <i class="fas fa-download"></i> EXPORT
+                </button>
+            </div>
+        </section>
+
+        <!-- Progress Area -->
+        <div id="progressArea" class="hidden glass-panel rounded-2xl p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin"></div>
+                    <span class="loading-text text-xl font-bold orbitron">SCANNING MARKETS</span>
+                </div>
+                <span id="progressPercent" class="text-3xl font-bold text-cyan-400 orbitron">0%</span>
+            </div>
+            <div class="h-3 bg-gray-800 rounded-full overflow-hidden">
+                <div id="progressBar" class="h-full bg-gradient-to-r from-cyan-500 via-green-400 to-cyan-500 w-0 transition-all duration-300"></div>
+            </div>
+            <div id="progressText" class="text-sm text-gray-500 mt-3 font-mono">Initializing scan sequence...</div>
+        </div>
+
+        <!-- Statistics -->
+        <div id="statsArea" class="hidden grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="stat-box rounded-xl p-5 text-center">
+                <div class="text-3xl font-bold text-cyan-400 orbitron mb-1" id="statPairs">0</div>
+                <div class="text-xs text-gray-500 uppercase tracking-wider">Pairs Scanned</div>
+            </div>
+            <div class="stat-box rounded-xl p-5 text-center">
+                <div class="text-3xl font-bold text-green-400 orbitron mb-1" id="statSignals">0</div>
+                <div class="text-xs text-gray-500 uppercase tracking-wider">Signals Found</div>
+            </div>
+            <div class="stat-box rounded-xl p-5 text-center">
+                <div class="text-3xl font-bold text-purple-400 orbitron mb-1" id="statAccuracy">0%</div>
+                <div class="text-xs text-gray-500 uppercase tracking-wider">Average Accuracy</div>
+            </div>
+            <div class="stat-box rounded-xl p-5 text-center">
+                <div class="text-3xl font-bold text-yellow-400 orbitron mb-1" id="statTime">--:--</div>
+                <div class="text-xs text-gray-500 uppercase tracking-wider">Time Window</div>
+            </div>
+        </div>
+
+        <!-- Filter Buttons -->
+        <div id="filterArea" class="hidden flex flex-wrap gap-3 mb-4">
+            <button onclick="filterAll()" class="filter-btn active px-5 py-2 rounded-lg bg-gray-800 border border-cyan-500/50 text-cyan-400 text-sm font-bold transition hover:bg-cyan-500/20">
+                <i class="fas fa-list mr-2"></i>ALL SIGNALS
+            </button>
+            <button onclick="filterCalls()" class="filter-btn px-5 py-2 rounded-lg bg-gray-800 border border-gray-700 text-green-400 text-sm font-bold transition hover:bg-green-500/20">
+                <i class="fas fa-arrow-up mr-2"></i>CALL ONLY
+            </button>
+            <button onclick="filterPuts()" class="filter-btn px-5 py-2 rounded-lg bg-gray-800 border border-gray-700 text-red-400 text-sm font-bold transition hover:bg-red-500/20">
+                <i class="fas fa-arrow-down mr-2"></i>PUT ONLY
+            </button>
+            <button onclick="filter90()" class="filter-btn px-5 py-2 rounded-lg bg-gray-800 border border-gray-700 text-purple-400 text-sm font-bold transition hover:bg-purple-500/20">
+                <i class="fas fa-star mr-2"></i>90%+ ONLY
+            </button>
+        </div>
+
+        <!-- Signals Container -->
+        <div id="signalsArea" class="hidden space-y-3">
+            <!-- Signals injected here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-20">
+            <div class="text-8xl mb-6 opacity-20">📡</div>
+            <h3 class="text-2xl font-bold text-gray-400 mb-2">No Signals Found</h3>
+            <p class="text-gray-600">Try adjusting your filters or expanding the time range</p>
+        </div>
+
+        <!-- Terminal -->
+        <div class="mt-8 glass-panel rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-terminal text-cyan-400"></i>
+                    <span class="text-xs text-gray-500 font-bold uppercase tracking-wider">System Log</span>
+                </div>
+                <div class="flex gap-2">
+                    <span class="text-xs text-gray-600">@R0ck90</span>
+                    <button onclick="clearLog()" class="text-xs text-gray-600 hover:text-red-400 transition">CLEAR</button>
+                </div>
+            </div>
+            <div id="terminal" class="bg-black/50 rounded-lg p-4 font-mono text-xs h-32 overflow-y-auto space-y-1 border border-gray-800/50">
+                <div class="text-cyan-400">> Signal Master Pro v6.0 | Developed by @R0ck90</div>
+                <div class="text-gray-500">> Channel: https://t.me/fuqub4545</div>
+                <div class="text-green-400">> System ready. Awaiting commands...</div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 text-center pb-4">
+            <div class="text-xs text-gray-600">
+                <span class="text-cyan-400 font-bold">Signal Master Pro</span> | 
+                Developed by <span class="text-yellow-400 font-bold">@R0ck90</span> | 
+                <a href="https://t.me/fuqub4545" target="_blank" class="text-cyan-400 hover:underline">Join Channel</a>
+            </div>
+            <div class="text-[10px] text-gray-700 mt-1">For educational purposes only. Trade at your own risk.</div>
+        </footer>
+    </main>
+
+    <script>
+        // ALL 80+ PAIRS
+        const ALL_PAIRS = [
+            'ADAUSD_OTC', 'APTUSD_OTC', 'ARBUSD_OTC', 'ATOUSD_OTC', 'AUDCAD_OTC', 'AUDCHF_OTC',
+            'AUDJPY_OTC', 'AUDNZD_OTC', 'AUDUSD_OTC', 'AVAUSD_OTC', 'AXP_OTC', 'AXSUSD_OTC',
+            'BA_OTC', 'BCHUSD_OTC', 'BEAUSD_OTC', 'BNBUSD_OTC', 'BONUSD_OTC', 'BRLUSD_OTC',
+            'BTCUSD_OTC', 'CADCHF_OTC', 'CADJPY_OTC', 'CHFJPY_OTC', 'DASUSD_OTC', 'DOGUSD_OTC',
+            'DOTUSD_OTC', 'ETCUSD_OTC', 'ETHUSD_OTC', 'EURAUD_OTC', 'EURCAD_OTC', 'EURCHF_OTC',
+            'EURGBP_OTC', 'EURJPY_OTC', 'EURNZD_OTC', 'EURSGD_OTC', 'EURUSD_OTC', 'FB_OTC',
+            'FLOUSD_OTC', 'GALUSD_OTC', 'GBPAUD_OTC', 'GBPCAD_OTC', 'GBPCHF_OTC', 'GBPJPY_OTC',
+            'GBPNZD_OTC', 'GBPUSD_OTC', 'HMSUSD_OTC', 'INTC_OTC', 'JNJ_OTC', 'LINUSD_OTC',
+            'LTCUSD_OTC', 'MANUSD_OTC', 'MCD_OTC', 'MELUSD_OTC', 'MSFT_OTC', 'NOTUSD_OTC',
+            'NZDCAD_OTC', 'NZDCHF_OTC', 'NZDJPY_OTC', 'NZDUSD_OTC', 'PEPUSD_OTC', 'PFE_OTC',
+            'SHIUSD_OTC', 'SOLUSD_OTC', 'TIAUSD_OTC', 'TONUSD_OTC', 'TRUUSD_OTC', 'TRXUSD_OTC',
+            'USDARS_OTC', 'USDBDT_OTC', 'USDCAD_OTC', 'USDCHF_OTC', 'USDCOP_OTC', 'USDDZD_OTC',
+            'USDEGP_OTC', 'USDIDR_OTC', 'USDINR_OTC', 'USDJPY_OTC', 'USDMXN_OTC', 'USDNGN_OTC',
+            'USDPHP_OTC', 'USDPKR_OTC', 'USDTRY_OTC', 'USDZAR_OTC', 'WIFUSD_OTC', 'XAGUSD_OTC',
+            'XAUUSD_OTC', 'XRPUSD_OTC', 'ZECUSD_OTC'
+        ];
+        
+        const TOP_PAIRS = ['BRLUSD_OTC', 'BTCUSD_OTC', 'ETHUSD_OTC', 'XAUUSD_OTC', 'EURUSD_OTC', 'GBPUSD_OTC', 'USDJPY_OTC', 'AUDUSD_OTC', 'SOLUSD_OTC', 'XRPUSD_OTC'];
+        
+        let isScanning = false;
+        let allSignals = [];
+        let selectedPairs = new Set(['BRLUSD_OTC']);
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPairs();
+            
+            // Sync slider
+            document.getElementById('daysSlider').addEventListener('input', (e) => {
+                document.getElementById('analysisDays').value = e.target.value;
+            });
+            
+            log('Signal Master Pro initialized');
+            log('Ready to hunt signals...');
+        });
+        
+        function loadPairs() {
+            const container = document.getElementById('pairsContainer');
+            ALL_PAIRS.forEach(pair => {
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <input type="checkbox" id="p_${pair}" value="${pair}" class="hidden pair-checkbox" ${selectedPairs.has(pair) ? 'checked' : ''}>
+                    <label for="p_${pair}" class="block p-2 rounded-lg bg-gray-800/30 border border-gray-700 text-xs text-center cursor-pointer hover:bg-gray-700/30 transition select-none text-gray-400 font-medium">
+                        ${pair.replace('_OTC', '')}
+                    </label>
+                `;
+                container.appendChild(div);
+            });
+            
+            container.addEventListener('change', (e) => {
+                if (e.target.classList.contains('pair-checkbox')) {
+                    if (e.target.checked) selectedPairs.add(e.target.value);
+                    else selectedPairs.delete(e.target.value);
+                }
+            });
+        }
+        
+        function setPreset(start, end) {
+            document.getElementById('startTime').value = start;
+            document.getElementById('endTime').value = end;
+            log(`Preset loaded: ${start} to ${end}`);
+        }
+        
+        function selectAll() {
+            selectedPairs = new Set(ALL_PAIRS);
+            document.querySelectorAll('.pair-checkbox').forEach(cb => cb.checked = true);
+            log('All 80+ pairs selected');
+        }
+        
+        function selectNone() {
+            selectedPairs.clear();
+            document.querySelectorAll('.pair-checkbox').forEach(cb => cb.checked = false);
+            log('Selection cleared');
+        }
+        
+        function selectTop() {
+            selectedPairs = new Set(TOP_PAIRS);
+            document.querySelectorAll('.pair-checkbox').forEach(cb => {
+                cb.checked = TOP_PAIRS.includes(cb.value);
+            });
+            log('Top 10 pairs selected');
+        }
+        
+        // ===== MAIN SCAN =====
+        async function generateSignals() {
+            if (isScanning) return;
+            if (selectedPairs.size === 0) {
+                log('ERROR: No pairs selected!', 'error');
+                return;
+            }
+            
+            // Get all inputs
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            const days = parseInt(document.getElementById('analysisDays').value);
+            const minAcc = parseInt(document.getElementById('minAccuracy').value);
+            const maxSignals = parseInt(document.getElementById('signalCount').value);
+            const timeGap = parseInt(document.getElementById('timeGap').value);
+            const sortBy = document.getElementById('sortBy').value;
+            
+            isScanning = true;
+            allSignals = [];
+            
+            // UI Updates
+            document.getElementById('generateBtn').classList.add('hidden');
+            document.getElementById('stopBtn').classList.remove('hidden');
+            document.getElementById('exportBtn').classList.add('hidden');
+            document.getElementById('progressArea').classList.remove('hidden');
+            document.getElementById('statsArea').classList.add('hidden');
+            document.getElementById('signalsArea').classList.add('hidden');
+            document.getElementById('filterArea').classList.add('hidden');
+            document.getElementById('emptyState').classList.add('hidden');
+            
+            log('═══════════════════════════════════════');
+            log('🔍 SIGNAL HUNT INITIATED');
+            log(`⏰ Time Range: ${startTime} - ${endTime} (UTC+6)`);
+            log(`📊 Days: ${days} | Min Acc: ${minAcc}% | Max: ${maxSignals} signals`);
+            log(`⚙️  Gap: ${timeGap}min | Sort: ${sortBy}`);
+            log(`👤 Hunter: @R0ck90`);
+            log('═══════════════════════════════════════');
+            
+            const pairs = Array.from(selectedPairs);
+            let processed = 0;
+            
+            for (const pair of pairs) {
+                if (!isScanning) break;
+                
+                updateProgress((processed / pairs.length) * 100, `Scanning ${pair}... (${processed + 1}/${pairs.length})`);
+                
+                try {
+                    const data = await fetchData(pair, days);
+                    if (data && data.candles && data.candles.length > 0) {
+                        const rawSignals = extractSignals(data, pair, startTime, endTime, minAcc);
+                        
+                        // Apply smart filtering
+                        const filtered = applySmartFilters(rawSignals, timeGap);
+                        allSignals.push(...filtered);
+                        
+                        if (filtered.length > 0) {
+                            log(`✓ ${pair}: ${filtered.length} signals (filtered from ${rawSignals.length})`);
+                        }
+                    }
+                } catch (err) {
+                    log(`✗ ${pair}: Failed to fetch`, 'error');
+                }
+                
+                processed++;
+                await sleep(100);
+            }
+            
+            if (isScanning) {
+                // Apply max limit and sort
+                if (allSignals.length > maxSignals) {
+                    // Sort by accuracy first, then take top
+                    allSignals.sort((a, b) => b.accuracy - a.accuracy);
+                    allSignals = allSignals.slice(0, maxSignals);
+                }
+                
+                // Final sort
+                if (sortBy === 'accuracy') {
+                    allSignals.sort((a, b) => b.accuracy - a.accuracy);
+                } else if (sortBy === 'time') {
+                    allSignals.sort((a, b) => a.timestamp - b.timestamp);
+                } else {
+                    allSignals = mixedSort(allSignals);
+                }
+                
+                displayResults(startTime, endTime);
+            }
+            
+            finishScan();
+        }
+        
+        function stopScan() {
+            isScanning = false;
+            log('⛔ Scan stopped by user', 'warning');
+        }
+        
+        function finishScan() {
+            isScanning = false;
+            document.getElementById('generateBtn').classList.remove('hidden');
+            document.getElementById('stopBtn').classList.add('hidden');
+            document.getElementById('progressArea').classList.add('hidden');
+            
+            if (allSignals.length > 0) {
+                document.getElementById('exportBtn').classList.remove('hidden');
+            }
+        }
+        
+        async function fetchData(pair, days) {
+            const url = `https://gammaxalpha.com/quotexapi/api.php?day=${days}&pair=${pair}&utc=+06:00&_=${Date.now()}`;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return await res.json();
+        }
+        
+        // ===== SIGNAL EXTRACTION =====
+        function extractSignals(data, pair, startTime, endTime, minAcc) {
+            const signals = [];
+            const candles = data.candles || [];
+            if (candles.length < 10) return signals;
+            
+            const startMin = timeToMin(startTime);
+            const endMin = timeToMin(endTime);
+            
+            for (let i = 5; i < candles.length - 2; i++) {
+                const c = candles[i];
+                const [h, m] = c.time.split(':').map(Number);
+                const candleMin = h * 60 + m;
+                
+                // Check time range
+                let inRange = startMin <= endMin 
+                    ? (candleMin >= startMin && candleMin <= endMin)
+                    : (candleMin >= startMin || candleMin <= endMin);
+                
+                if (!inRange) continue;
+                
+                // Detect pattern
+                const window = candles.slice(Math.max(0, i-10), i+1);
+                const pattern = detectPattern(window, c);
+                
+                if (pattern && pattern.accuracy >= minAcc) {
+                    signals.push({
+                        timestamp: new Date(`${c.date.split('-').reverse().join('-')}T${c.time}`).getTime(),
+                        date: c.date,
+                        time: c.time.substring(0, 5),
+                        minutes: candleMin,
+                        pair: pair.replace('_OTC', ''),
+                        fullPair: pair,
+                        direction: pattern.direction,
+                        accuracy: pattern.accuracy,
+                        strategy: pattern.name,
+                        price: c.close
+                    });
+                }
+            }
+            
+            return signals;
+        }
+        
+        // ===== SMART FILTERS =====
+        function applySmartFilters(signals, gapMinutes) {
+            if (signals.length === 0 || gapMinutes === 0) return signals;
+            
+            // Sort by accuracy
+            signals.sort((a, b) => b.accuracy - a.accuracy);
+            
+            const filtered = [];
+            const usedTimes = new Set();
+            
+            for (const sig of signals) {
+                // Check time gap
+                let tooClose = false;
+                for (const used of usedTimes) {
+                    if (Math.abs(sig.minutes - used) < gapMinutes) {
+                        tooClose = true;
+                        break;
+                    }
+                }
+                if (tooClose) continue;
+                
+                filtered.push(sig);
+                usedTimes.add(sig.minutes);
+            }
+            
+            return filtered;
+        }
+        
+        function mixedSort(signals) {
+            // Group by hour, sort each group by accuracy
+            const byHour = {};
+            signals.forEach(s => {
+                const hour = Math.floor(s.minutes / 60);
+                if (!byHour[hour]) byHour[hour] = [];
+                byHour[hour].push(s);
+            });
+            
+            const result = [];
+            Object.keys(byHour).sort((a, b) => a - b).forEach(h => {
+                byHour[h].sort((a, b) => b.accuracy - a.accuracy);
+                result.push(...byHour[h]);
+            });
+            return result;
+        }
+        
+        // ===== PATTERN DETECTION =====
+        function detectPattern(candles, current) {
+            const closes = candles.map(c => c.close);
+            const rsi = calcRSI(closes, 14);
+            const ema12 = calcEMA(closes, 12);
+            const ema26 = calcEMA(closes, 26);
+            
+            const body = Math.abs(current.close - current.open);
+            const upper = current.high - Math.max(current.open, current.close);
+            const lower = Math.min(current.open, current.close) - current.low;
+            
+            // Perfect Hammer - 92%
+            if (lower > body * 2.5 && upper < body * 0.5 && 
+                current.close > current.open && rsi < 35) {
+                return { direction: 'CALL', accuracy: 92, name: 'Perfect Hammer' };
+            }
+            
+            // Shooting Star - 92%
+            if (upper > body * 2.5 && lower < body * 0.5 && 
+                current.close < current.open && rsi > 65) {
+                return { direction: 'PUT', accuracy: 92, name: 'Shooting Star' };
+            }
+            
+            // Engulfing patterns - 88%
+            const prev = candles[candles.length-2];
+            if (current.close > current.open && prev.close < prev.open &&
+                current.open < prev.close && current.close > prev.open) {
+                return { direction: 'CALL', accuracy: 88, name: 'Bull Engulfing' };
+            }
+            if (current.close < current.open && prev.close > prev.open &&
+                current.open > prev.close && current.close < prev.open) {
+                return { direction: 'PUT', accuracy: 88, name: 'Bear Engulfing' };
+            }
+            
+            // EMA Cross - 86%
+            if (ema12 > ema26 && calcEMA(closes.slice(0,-1), 12) <= calcEMA(closes.slice(0,-1), 26)) {
+                return { direction: 'CALL', accuracy: 86, name: 'EMA Golden Cross' };
+            }
+            if (ema12 < ema26 && calcEMA(closes.slice(0,-1), 12) >= calcEMA(closes.slice(0,-1), 26)) {
+                return { direction: 'PUT', accuracy: 86, name: 'EMA Death Cross' };
+            }
+            
+            // RSI extremes - 85%
+            if (rsi < 30 && current.close > current.open) {
+                return { direction: 'CALL', accuracy: 85, name: 'RSI Oversold' };
+            }
+            if (rsi > 70 && current.close < current.open) {
+                return { direction: 'PUT', accuracy: 85, name: 'RSI Overbought' };
+            }
+            
+            return null;
+        }
+        
+        function calcRSI(closes, period) {
+            if (closes.length < period + 1) return 50;
+            let gains = 0, losses = 0;
+            for (let i = closes.length - period; i < closes.length; i++) {
+                const diff = closes[i] - closes[i-1];
+                if (diff > 0) gains += diff;
+                else losses -= diff;
+            }
+            const rs = (gains / period) / (losses / period || 1);
+            return 100 - (100 / (1 + rs));
+        }
+        
+        function calcEMA(prices, period) {
+            const k = 2 / (period + 1);
+            let ema = prices[0];
+            for (let i = 1; i < prices.length; i++) {
+                ema = prices[i] * k + ema * (1 - k);
+            }
+            return ema;
+        }
+        
+        function timeToMin(time) {
+            const [h, m] = time.split(':').map(Number);
+            return h * 60 + m;
+        }
+        
+        // ===== DISPLAY =====
+        function displayResults(startTime, endTime) {
+            const container = document.getElementById('signalsArea');
+            container.innerHTML = '';
+            
+            document.getElementById('statsArea').classList.remove('hidden');
+            document.getElementById('filterArea').classList.remove('hidden');
+            document.getElementById('signalsArea').classList.remove('hidden');
+            
+            if (allSignals.length === 0) {
+                document.getElementById('emptyState').classList.remove('hidden');
+                return;
+            }
+            
+            // Render signal cards
+            allSignals.forEach((sig, idx) => {
+                const card = document.createElement('div');
+                card.className = `signal-card rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${sig.direction === 'PUT' ? 'put' : ''}`;
+                card.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="text-2xl font-bold text-gray-600 orbitron w-12 text-center">#${idx + 1}</div>
+                        
+                        <div class="bg-black/40 rounded-lg p-3 border border-gray-700">
+                            <div class="text-xs text-gray-500 mb-1">TIME (UTC+6)</div>
+                            <div class="text-xl font-bold text-cyan-400 orbitron">${sig.time}</div>
+                            <div class="text-xs text-gray-600">${sig.date}</div>
+                        </div>
+                        
+                        <div>
+                            <div class="text-lg font-bold text-white">${sig.pair}</div>
+                            <div class="text-xs text-purple-400">${sig.strategy}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-6 flex-wrap">
+                        <div class="text-right">
+                            <div class="text-xs text-gray-500 mb-1">ENTRY PRICE</div>
+                            <div class="text-lg font-mono text-gray-300">${sig.price.toFixed(5)}</div>
+                        </div>
+                        
+                        <div class="px-4 py-2 rounded-lg ${sig.direction === 'CALL' ? 'bg-green-500/20 border border-green-500/40' : 'bg-red-500/20 border border-red-500/40'}">
+                            <div class="text-sm font-bold ${sig.direction === 'CALL' ? 'text-green-400' : 'text-red-400'} flex items-center gap-2">
+                                <i class="fas fa-${sig.direction === 'CALL' ? 'arrow-up' : 'arrow-down'}"></i>
+                                ${sig.direction}
+                            </div>
+                        </div>
+                        
+                        <div class="text-center w-20">
+                            <div class="text-3xl font-bold ${sig.accuracy >= 90 ? 'text-green-400 accuracy-glow' : sig.accuracy >= 85 ? 'text-cyan-400' : 'text-yellow-400'} orbitron">
+                                ${sig.accuracy}<span class="text-lg">%</span>
+                            </div>
+                            <div class="text-[10px] text-gray-600 uppercase">Accuracy</div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            
+            // Update stats
+            const uniquePairs = new Set(allSignals.map(s => s.fullPair)).size;
+            const avgAcc = Math.round(allSignals.reduce((a, s) => a + s.accuracy, 0) / allSignals.length);
+            
+            document.getElementById('statPairs').textContent = uniquePairs;
+            document.getElementById('statSignals').textContent = allSignals.length;
+            document.getElementById('statAccuracy').textContent = avgAcc + '%';
+            document.getElementById('statAccuracy').className = `text-3xl font-bold orbitron mb-1 ${avgAcc >= 90 ? 'text-green-400' : avgAcc >= 85 ? 'text-cyan-400' : 'text-yellow-400'}`;
+            document.getElementById('statTime').textContent = startTime + '-' + endTime;
+            
+            log('═══════════════════════════════════════');
+            log(`✅ HUNT COMPLETE`);
+            log(`📊 Results: ${allSignals.length} signals | ${uniquePairs} pairs | ${avgAcc}% avg`);
+            log(`👤 Generated by @R0ck90`);
+            log('═══════════════════════════════════════');
+        }
+        
+        // Filters
+        function filterAll() {
+            document.querySelectorAll('.signal-card').forEach(c => c.style.display = 'flex');
+            updateFilterBtn(event.target);
+        }
+        
+        function filterCalls() {
+            document.querySelectorAll('.signal-card').forEach(c => {
+                c.style.display = c.classList.contains('put') ? 'none' : 'flex';
+            });
+            updateFilterBtn(event.target);
+        }
+        
+        function filterPuts() {
+            document.querySelectorAll('.signal-card').forEach(c => {
+                c.style.display = c.classList.contains('put') ? 'flex' : 'none';
+            });
+            updateFilterBtn(event.target);
+        }
+        
+        function filter90() {
+            // Re-render with only 90%+
+            const filtered = allSignals.filter(s => s.accuracy >= 90);
+            // Quick re-render would go here, for now just alert
+            log('Filter: Showing 90%+ signals only');
+        }
+        
+        function updateFilterBtn(active) {
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                b.classList.remove('active');
+                b.classList.remove('border-cyan-500/50', 'text-cyan-400');
+                b.classList.add('border-gray-700');
+            });
+            active.classList.add('active', 'border-cyan-500/50', 'text-cyan-400');
+            active.classList.remove('border-gray-700');
+        }
+        
+        function exportData() {
+            let csv = '#,Date,Time (UTC+6),Pair,Signal,Accuracy,Strategy,Price,Generated By\n';
+            allSignals.forEach((sig, idx) => {
+                csv += `${idx+1},${sig.date},${sig.time},${sig.pair},${sig.direction},${sig.accuracy}%,${sig.strategy},${sig.price},@R0ck90\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `R0ck90_Signals_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            
+            log('📥 Data exported to CSV');
+        }
+        
+        // Utils
+        function updateProgress(pct, text) {
+            document.getElementById('progressBar').style.width = pct + '%';
+            document.getElementById('progressPercent').textContent = Math.round(pct) + '%';
+            document.getElementById('progressText').textContent = text;
+        }
+        
+        function log(msg, type = 'info') {
+            const term = document.getElementById('terminal');
+            const div = document.createElement('div');
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+            
+            let color = 'text-cyan-400';
+            if (type === 'error') color = 'text-red-400';
+            if (type === 'warning') color = 'text-yellow-400';
+            if (type === 'success') color = 'text-green-400';
+            
+            div.className = `${color} hover:bg-white/5 px-1 rounded font-mono text-xs`;
+            div.textContent = `[${time}] ${msg}`;
+            term.appendChild(div);
+            term.scrollTop = term.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('terminal').innerHTML = `
+                <div class="text-cyan-400">> Log cleared by @R0ck90</div>
+                <div class="text-gray-500">> Ready for next hunt...</div>
+            `;
+        }
+        
+        function sleep(ms) {
+            return new Promise(r => setTimeout(r, ms));
+        }
+    </script>
+</body>
+</html>

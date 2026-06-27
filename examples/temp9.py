@@ -37,6 +37,17 @@ from rich import print as rprint
 from rich.progress import Progress, SpinnerColumn, TextColumn
 import numpy as np
 
+# ==================== CONFIGURATION ====================
+EMAIL = os.getenv("QUOTEX_EMAIL", "")
+PASSWORD = os.getenv("QUOTEX_PASSWORD", "")
+
+if not EMAIL or not PASSWORD:
+    print("Enter Quotex credentials:")
+    EMAIL = input("Email: ").strip()
+    PASSWORD = input("Password: ").strip()
+
+console = Console()
+
 # ==================== TECHNICAL INDICATORS ====================
 class TechnicalIndicators:
     """Technical indicator calculations (used by Triple Confirmation Strategy)"""
@@ -517,9 +528,10 @@ class HistoricalDataManager:
 class QuantumTradingBot:
     """Main trading bot with AI predictions or Triple Confirmation Strategy"""
     
-    def __init__(self):
+    def __init__(self, client):
+        self.client = client
         self.engine = QuantumPredictionEngine()
-        self.historical = HistoricalDataManager(client)
+        self.historical = HistoricalDataManager(client)  # pass client explicitly
         self.active_trades = []
         self.trade_history = []
         self.current_balance = 0
@@ -564,7 +576,7 @@ class QuantumTradingBot:
         
         # Connect
         console.print("\n[cyan]🔗 Connecting to Quotex...[/cyan]")
-        check, msg = await client.connect()
+        check, msg = await self.client.connect()
         if not check:
             console.print(f"[red]❌ Connection failed: {msg}[/red]")
             return False
@@ -577,10 +589,10 @@ class QuantumTradingBot:
         choice = input("\n👉 Choose (1/2): ").strip()
         account_type = "REAL" if choice == "1" else "PRACTICE"
         
-        await client.change_account(account_type)
+        await self.client.change_account(account_type)
         await asyncio.sleep(1)
         
-        self.current_balance = await client.get_balance()
+        self.current_balance = await self.client.get_balance()
         self.initial_balance = self.current_balance
         
         console.print(f"\n[green]💰 Balance: ${self.current_balance:.2f}[/green]")
@@ -656,7 +668,7 @@ class QuantumTradingBot:
     async def get_candles_for_analysis(self, asset, period=60, count=100):
         """Get candles for AI analysis"""
         try:
-            candles = await client.get_candles(asset, None, period * count, period)
+            candles = await self.client.get_candles(asset, None, period * count, period)
             if candles:
                 formatted = []
                 for c in candles[-count:]:
@@ -793,7 +805,7 @@ class QuantumTradingBot:
     async def execute_trade(self, asset, direction, period, amount):
         """Execute a trade"""
         try:
-            asset_name, asset_data = await client.get_available_asset(asset, force_open=True)
+            asset_name, asset_data = await self.client.get_available_asset(asset, force_open=True)
             
             if not asset_data[2]:
                 console.print(f"[red]❌ {asset} is closed![/red]")
@@ -801,7 +813,7 @@ class QuantumTradingBot:
             
             console.print(f"\n[bold yellow]⚡ EXECUTING: {direction} on {asset} ({period}s) ${amount}[/bold yellow]")
             
-            status, buy_info = await client.buy(amount, asset_name, direction.lower(), period)
+            status, buy_info = await self.client.buy(amount, asset_name, direction.lower(), period)
             
             if not status:
                 console.print("[red]❌ Trade failed![/red]")
@@ -814,7 +826,7 @@ class QuantumTradingBot:
             
             # Check result
             if buy_info and "id" in buy_info:
-                win_status, profit = await client.check_win(buy_info["id"])
+                win_status, profit = await self.client.check_win(buy_info["id"])
                 
                 result = "WIN" if win_status == "win" else "LOSS"
                 trade_profit = profit if win_status == "win" else -amount
@@ -1080,7 +1092,9 @@ class QuantumTradingBot:
 
 # ==================== MAIN ====================
 async def main():
-    bot = QuantumTradingBot()
+    # Create client here, then pass to bot
+    client = Quotex(email=EMAIL, password=PASSWORD, lang="en")
+    bot = QuantumTradingBot(client)  # pass the client to the bot
     
     try:
         await bot.run()

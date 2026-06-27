@@ -30,7 +30,7 @@ SUPERTREND_STRATEGY = False           # enable/disable Supertrend strategy
 AVAILABLE_STRATEGIES = [
     "EMA_RSI", "Trend", "Bollinger", "Support_Resistance",
     "Trend_Reverse", "Price_Action", "Supertrend", "FVG_Strategy",
-    "TripleConfirmation"   # <-- ADDED FOR TRIPLE CONFIRMATION
+    "TripleConfirmation"
 ]
 
 # ---------- Constants for Triple Confirmation strategy ----------
@@ -39,11 +39,11 @@ TRIPLE_CONFIRMATION_EMA_SLOW = 50
 TRIPLE_CONFIRMATION_RSI_PERIOD = 7
 TRIPLE_CONFIRMATION_STOCH_K = 14
 TRIPLE_CONFIRMATION_STOCH_D = 3
-# Slightly relaxed thresholds to get more signals
-TRIPLE_CALL_RSI_MIN = 45
-TRIPLE_PUT_RSI_MAX = 55
-TRIPLE_STOCH_OVERBOUGHT = 65
-TRIPLE_STOCH_OVERSOLD = 35
+# Original strict thresholds
+TRIPLE_CALL_RSI_MIN = 50
+TRIPLE_PUT_RSI_MAX = 50
+TRIPLE_STOCH_OVERBOUGHT = 70
+TRIPLE_STOCH_OVERSOLD = 30
 
 # ---------- Indicator functions ----------
 def ema(values, period):
@@ -524,7 +524,7 @@ def analyze_market(candle_data):
         uptrend = price > ema20 > ema50
         downtrend = price < ema20 < ema50
 
-        # 2. RSI momentum (relaxed thresholds)
+        # 2. RSI momentum (original strict)
         rsi = calculate_rsi(closes, TRIPLE_CONFIRMATION_RSI_PERIOD)
         if rsi is None:
             return None, 0.0
@@ -539,12 +539,12 @@ def analyze_market(candle_data):
         k_now, k_prev = stoch['k'][-1], stoch['k'][-2]
         d_now, d_prev = stoch['d'][-1], stoch['d'][-2]
 
-        # CALL: uptrend + RSI > threshold + bullish K/D cross below oversold
+        # CALL: uptrend + RSI > 50 + bullish K/D cross below 30
         if uptrend and last_rsi > TRIPLE_CALL_RSI_MIN:
             if k_prev < d_prev and k_now > d_now and d_now < TRIPLE_STOCH_OVERSOLD:
                 return "call", 5
 
-        # PUT: downtrend + RSI < threshold + bearish K/D cross above overbought
+        # PUT: downtrend + RSI < 50 + bearish K/D cross above 70
         if downtrend and last_rsi < TRIPLE_PUT_RSI_MAX:
             if k_prev > d_prev and k_now < d_now and d_now > TRIPLE_STOCH_OVERBOUGHT:
                 return "put", 5
@@ -555,7 +555,7 @@ def analyze_market(candle_data):
 
 
 # ===================================================================
-#  ORIGINAL TRADE BOT CODE (modified to fetch more candles)
+#  ORIGINAL TRADE BOT CODE (modified to fetch enough 1‑minute candles)
 # ===================================================================
 
 # -------------------- Asset list for shuffle --------------------
@@ -574,7 +574,7 @@ SHUFFLE_ASSETS = [
     "USDJPY",
 ]
 
-# -------------------- Multi-Market Scanner (unchanged) --------------------
+# -------------------- Multi-Market Scanner (updated to request enough candles) --------------------
 class MultiMarketScanner:
     """Scans multiple markets simultaneously for signals"""
     def __init__(self):
@@ -593,8 +593,8 @@ class MultiMarketScanner:
 
     async def get_quick_prices(self, asset, count=30):
         try:
-            # Request enough candles (count + buffer)
-            candles = await client.get_candles(asset, None, 60, count + 20, use_cache=True)
+            # Request 1‑minute candles (period=60) and plenty of them
+            candles = await client.get_candles(asset, None, 250, 60, use_cache=True)
             if candles:
                 prices = []
                 for c in candles[-count:]:
@@ -889,7 +889,7 @@ async def cleanup():
     except:
         pass
 
-# -------------------- Single Asset Mode (fixed: more candles) --------------------
+# -------------------- Single Asset Mode (fixed candle fetch) --------------------
 async def single_asset_mode(config):
     max_trades, base_amount, stop_loss, stop_profit, trading_mode = config
     amount = base_amount
@@ -921,8 +921,8 @@ async def single_asset_mode(config):
             print(f"\n❌ Balance ${balance:.2f} < ${amount:.2f}")
             break
         print(f"{'='*80}")
-        # FIX: Request many candles (200) to support all strategies
-        candles = await client.get_candles(asset_name, None, 60, 200, use_cache=True)
+        # FIX: Request 250 1‑minute candles (period=60) to have enough historical data
+        candles = await client.get_candles(asset_name, None, 250, 60, use_cache=True)
         if not candles:
             print("   ❌ Failed to get candle data")
             await asyncio.sleep(3)
@@ -947,7 +947,7 @@ async def single_asset_mode(config):
                         'close': float(c[3])
                     })
         # Ensure enough candles for the chosen strategy
-        min_needed = max(EMA_PERIOD, RSI_PERIOD, 20)  # safe minimum
+        min_needed = max(EMA_PERIOD, RSI_PERIOD, 20)
         if len(candle_data) < min_needed:
             print(f"   ⚠️  Only {len(candle_data)} candles, need {min_needed}...")
             await asyncio.sleep(2)
@@ -1004,7 +1004,7 @@ async def single_asset_mode(config):
                 print(f"   📈 ×2.6 (fourth loss) → ${amount:.2f}")
     return initial_balance, balance, trade_count, total_wins, total_losses, total_profit, total_loss_amount
 
-# -------------------- Shuffle Mode (fixed: more candles) --------------------
+# -------------------- Shuffle Mode (fixed candle fetch) --------------------
 async def shuffle_mode(config):
     max_trades, base_amount, stop_loss, stop_profit, trading_mode = config
     amount = base_amount
@@ -1040,8 +1040,8 @@ async def shuffle_mode(config):
             print(f"   ❌ {asset} is closed, skipping...")
             await asyncio.sleep(2)
             continue
-        # FIX: Request many candles (200)
-        candles = await client.get_candles(asset_name, None, 60, 200, use_cache=True)
+        # FIX: Request 250 1‑minute candles
+        candles = await client.get_candles(asset_name, None, 250, 60, use_cache=True)
         if not candles:
             print("   ❌ No candle data, skipping...")
             await asyncio.sleep(2)

@@ -4,6 +4,7 @@ import asyncio
 import signal
 import random
 import numpy as np
+import time  # <-- added for timestamp calculations
 from pyquotex.config import credentials
 from pyquotex.stable_api import Quotex
 from collections import deque
@@ -555,7 +556,7 @@ def analyze_market(candle_data):
 
 
 # ===================================================================
-#  ORIGINAL TRADE BOT CODE (modified to fetch enough 1‑minute candles)
+#  ORIGINAL TRADE BOT CODE (fixed candle fetching)
 # ===================================================================
 
 # -------------------- Asset list for shuffle --------------------
@@ -574,7 +575,7 @@ SHUFFLE_ASSETS = [
     "USDJPY",
 ]
 
-# -------------------- Multi-Market Scanner (updated to request enough candles) --------------------
+# -------------------- Multi-Market Scanner (fixed candle fetch) --------------------
 class MultiMarketScanner:
     """Scans multiple markets simultaneously for signals"""
     def __init__(self):
@@ -593,8 +594,10 @@ class MultiMarketScanner:
 
     async def get_quick_prices(self, asset, count=30):
         try:
-            # Request 1‑minute candles (period=60) and plenty of them
-            candles = await client.get_candles(asset, None, 250, 60, use_cache=True)
+            # Fetch 1‑minute candles, enough for quick scan
+            end = time.time()
+            start = end - 60 * (count + 20)  # extra buffer
+            candles = await client.get_candles(asset, start, end, 60, use_cache=True)
             if candles:
                 prices = []
                 for c in candles[-count:]:
@@ -889,7 +892,7 @@ async def cleanup():
     except:
         pass
 
-# -------------------- Single Asset Mode (fixed candle fetch) --------------------
+# -------------------- Single Asset Mode (fixed) --------------------
 async def single_asset_mode(config):
     max_trades, base_amount, stop_loss, stop_profit, trading_mode = config
     amount = base_amount
@@ -921,8 +924,10 @@ async def single_asset_mode(config):
             print(f"\n❌ Balance ${balance:.2f} < ${amount:.2f}")
             break
         print(f"{'='*80}")
-        # FIX: Request 250 1‑minute candles (period=60) to have enough historical data
-        candles = await client.get_candles(asset_name, None, 250, 60, use_cache=True)
+        # FIX: Fetch 250 one‑minute candles using timestamps
+        end = time.time()
+        start = end - 60 * 250
+        candles = await client.get_candles(asset_name, start, end, 60, use_cache=True)
         if not candles:
             print("   ❌ Failed to get candle data")
             await asyncio.sleep(3)
@@ -1004,7 +1009,7 @@ async def single_asset_mode(config):
                 print(f"   📈 ×2.6 (fourth loss) → ${amount:.2f}")
     return initial_balance, balance, trade_count, total_wins, total_losses, total_profit, total_loss_amount
 
-# -------------------- Shuffle Mode (fixed candle fetch) --------------------
+# -------------------- Shuffle Mode (fixed) --------------------
 async def shuffle_mode(config):
     max_trades, base_amount, stop_loss, stop_profit, trading_mode = config
     amount = base_amount
@@ -1040,8 +1045,10 @@ async def shuffle_mode(config):
             print(f"   ❌ {asset} is closed, skipping...")
             await asyncio.sleep(2)
             continue
-        # FIX: Request 250 1‑minute candles
-        candles = await client.get_candles(asset_name, None, 250, 60, use_cache=True)
+        # FIX: Fetch 250 one‑minute candles
+        end = time.time()
+        start = end - 60 * 250
+        candles = await client.get_candles(asset_name, start, end, 60, use_cache=True)
         if not candles:
             print("   ❌ No candle data, skipping...")
             await asyncio.sleep(2)

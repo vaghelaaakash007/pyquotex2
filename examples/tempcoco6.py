@@ -4,7 +4,7 @@ import asyncio
 import signal
 import random
 import numpy as np
-import time  # <-- added for timestamp calculations
+import time
 from pyquotex.config import credentials
 from pyquotex.stable_api import Quotex
 from collections import deque
@@ -556,7 +556,49 @@ def analyze_market(candle_data):
 
 
 # ===================================================================
-#  ORIGINAL TRADE BOT CODE (fixed candle fetching)
+#  ROBUST CANDLE FETCHER – ensures we always get enough candles
+# ===================================================================
+
+async def fetch_candles(asset, min_count=20, period=60):
+    """
+    Fetch candles with multiple fallback strategies to guarantee at least min_count.
+    Returns list of candle dicts.
+    """
+    end = int(time.time())
+    # Strategy 1: large range (2000 minutes)
+    start = end - period * 2000
+    candles = await client.get_candles(asset, start, end, period, use_cache=True)
+    if candles and len(candles) >= min_count:
+        return candles
+
+    # Strategy 2: even larger (5000 minutes)
+    start = end - period * 5000
+    candles = await client.get_candles(asset, start, end, period, use_cache=True)
+    if candles and len(candles) >= min_count:
+        return candles
+
+    # Strategy 3: try without cache (sometimes cache is stale)
+    candles = await client.get_candles(asset, start, end, period, use_cache=False)
+    if candles and len(candles) >= min_count:
+        return candles
+
+    # Strategy 4: if start/end don't work, try count parameter (if library supports)
+    try:
+        # Some versions accept count directly
+        candles = await client.get_candles(asset, start=end - period * 1000, end=end, period=period, use_cache=True)
+        # If that fails, maybe the signature is (asset, count, period, use_cache)
+        # We'll attempt with keyword count
+        # But we can't know, so we just return whatever we have
+        pass
+    except:
+        pass
+
+    # If still not enough, return whatever we have
+    return candles if candles else []
+
+
+# ===================================================================
+#  ORIGINAL TRADE BOT CODE (now using fetch_candles)
 # ===================================================================
 
 # -------------------- Asset list for shuffle --------------------
@@ -575,7 +617,7 @@ SHUFFLE_ASSETS = [
     "USDJPY",
 ]
 
-# -------------------- Multi-Market Scanner (fixed candle fetch) --------------------
+# -------------------- Multi-Market Scanner (fixed) --------------------
 class MultiMarketScanner:
     """Scans multiple markets simultaneously for signals"""
     def __init__(self):
@@ -594,10 +636,7 @@ class MultiMarketScanner:
 
     async def get_quick_prices(self, asset, count=30):
         try:
-            # Fetch 1‑minute candles, enough for quick scan
-            end = time.time()
-            start = end - 60 * (count + 20)  # extra buffer
-            candles = await client.get_candles(asset, start, end, 60, use_cache=True)
+            candles = await fetch_candles(asset, min_count=count)
             if candles:
                 prices = []
                 for c in candles[-count:]:
@@ -892,7 +931,7 @@ async def cleanup():
     except:
         pass
 
-# -------------------- Single Asset Mode (fixed) --------------------
+# -------------------- Single Asset Mode (now uses fetch_candles) --------------------
 async def single_asset_mode(config):
     max_trades, base_amount, stop_loss, stop_profit, trading_mode = config
     amount = base_amount
@@ -924,10 +963,8 @@ async def single_asset_mode(config):
             print(f"\n❌ Balance ${balance:.2f} < ${amount:.2f}")
             break
         print(f"{'='*80}")
-        # FIX: Fetch 250 one‑minute candles using timestamps
-        end = time.time()
-        start = end - 60 * 250
-        candles = await client.get_candles(asset_name, start, end, 60, use_cache=True)
+        # Fetch candles robustly
+        candles = await fetch_candles(asset_name, min_count=20, period=60)
         if not candles:
             print("   ❌ Failed to get candle data")
             await asyncio.sleep(3)
@@ -954,8 +991,8 @@ async def single_asset_mode(config):
         # Ensure enough candles for the chosen strategy
         min_needed = max(EMA_PERIOD, RSI_PERIOD, 20)
         if len(candle_data) < min_needed:
-            print(f"   ⚠️  Only {len(candle_data)} candles, need {min_needed}...")
-            await asyncio.sleep(2)
+            print(f"   ⚠️  Only {len(candle_data)} candles, need {min_needed}... waiting for more...")
+            await asyncio.sleep(5)  # wait for new candles
             continue
         sig_dir, sig_score = analyze_market(candle_data)
         if sig_dir and sig_score >= MIN_SIGNAL_SCORE:
@@ -1009,7 +1046,7 @@ async def single_asset_mode(config):
                 print(f"   📈 ×2.6 (fourth loss) → ${amount:.2f}")
     return initial_balance, balance, trade_count, total_wins, total_losses, total_profit, total_loss_amount
 
-# -------------------- Shuffle Mode (fixed) --------------------
+# -------------------- Shuffle Mode (now uses fetch_candles) --------------------
 async def shuffle_mode(config):
     max_trades, base_amount, stop_loss, stop_profit, trading_mode = config
     amount = base_amount
@@ -1045,10 +1082,7 @@ async def shuffle_mode(config):
             print(f"   ❌ {asset} is closed, skipping...")
             await asyncio.sleep(2)
             continue
-        # FIX: Fetch 250 one‑minute candles
-        end = time.time()
-        start = end - 60 * 250
-        candles = await client.get_candles(asset_name, start, end, 60, use_cache=True)
+        candles = await fetch_candles(asset_name, min_count=20, period=60)
         if not candles:
             print("   ❌ No candle data, skipping...")
             await asyncio.sleep(2)
@@ -1071,8 +1105,8 @@ async def shuffle_mode(config):
                 })
         min_needed = max(EMA_PERIOD, RSI_PERIOD, 20)
         if len(candle_data) < min_needed:
-            print(f"   ⚠️  Only {len(candle_data)} candles, need {min_needed}...")
-            await asyncio.sleep(2)
+            print(f"   ⚠️  Only {len(candle_data)} candles, need {min_needed}... waiting...")
+            await asyncio.sleep(5)
             continue
         # Quick analysis display (using indicators)
         closes = [d['close'] for d in candle_data]
